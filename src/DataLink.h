@@ -35,6 +35,16 @@ typedef enum{
 	
 }Role;
 
+typedef enum {
+	START,
+	FLAG_RCV,
+	A_RCV,
+	C_RCV,
+	BCC1,
+	BCC2,
+	STOP
+} LinkLayerState;
+
 typedef struct{
 	
 	char serialPort[20];

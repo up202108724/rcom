@@ -19,13 +19,13 @@
 
 #define FLAG 0x7E
 #define ESC 0x7D
-#define A_ER 0x03
-#define A_RE 0x01
+#define A_FSENDER 0x03
+#define A_FRECEIVER 0x01
 #define C_SET 0x03
 #define C_DISC 0x0B
 #define C_UA 0x07
-#define C_RR(n) ((n << 7) | 0x05)
-#define C_REJ(n) ((n << 7) | 0x01)
+#define C_RR(n) ((n << 7) | 0x05) // Receiver Ready to receive 
+#define C_REJ(n) ((n << 7) | 0x01) // Receiver Rejects to receive
 
 typedef enum{
 	
@@ -41,6 +41,8 @@ typedef enum {
 	A_RCV,
 	C_RCV,
 	BCC1,
+	READING_DATA,
+	DATA_RECEIVED,
 	BCC2,
 	STOP
 } LinkLayerState;
@@ -61,11 +63,11 @@ int llopen(LinkLayer connectionParameters);
 
 // Send data in buf with size bufSize.
 // Return number of chars written, or "-1" on error.
-int llwrite(int fd, const unsigned char *buf, int bufSize);
+int llwrite(int fd, unsigned char *buf, int bufSize);
 
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.
-int llread(int fd, unsigned char *packet);
+int llread(int fd, unsigned char *buf);
 
 // Close previously opened connection.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.

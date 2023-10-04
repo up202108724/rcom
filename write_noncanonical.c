@@ -15,7 +15,7 @@
 // included by <termios.h>
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 // POSIX compliant source
-
+#define SIGALRM 14
 #define FALSE 0
 #define TRUE 1
 
@@ -23,11 +23,23 @@
 
 volatile int STOP = FALSE;
 
+int alarmEnabled = FALSE;
+int alarmCount = 0;
+
+// Alarm function handler
+void alarmHandler(int signal)
+{
+    alarmEnabled = FALSE;
+    alarmCount++;
+
+    printf("Alarm #%d\n", alarmCount);
+}
+
 int main(int argc, char *argv[])
 {
     // Program usage: Uses either COM1 or COM2
     const char *serialPortName = argv[1];
-
+    (void)signal(SIGALRM, alarmHandler);
     if (argc < 2)
     {
         printf("Incorrect program usage\n"
@@ -60,7 +72,7 @@ int main(int argc, char *argv[])
 
     // Clear struct for new port settings
     memset(&newtio, 0, sizeof(newtio));
-
+    
     newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
@@ -103,7 +115,32 @@ int main(int argc, char *argv[])
     buf[5] = '\n';
 
     int bytes = write(fd, buf, BUF_SIZE);
-    printf("%d bytes written\n", bytes);
+    while (alarmCount < 4)
+    {
+        
+        if (alarmEnabled == FALSE)
+        {
+            bytes = write(fd, buf, BUF_SIZE);
+            printf("%d bytes written\n", bytes);
+            alarm(3); // Set alarm to be triggered in 3s
+            alarmEnabled = TRUE;
+        
+        }
+        if (alarmEnabled == TRUE){
+            
+            bytes=read(fd, buf, 5);
+            if(bytes){
+                if(buf[0]==0x7E && buf[1]==0x03 && buf[2]==0x07 && buf[3]==(buf[1]^buf[2]) && buf[4]==0x7E){
+                    
+                    alarm(0);
+                    alarmEnabled=FALSE;
+                    break;
+                }
+            }
+        }
+
+    }
+    
 
     // Wait until all bytes have been written to the serial port
     sleep(1);

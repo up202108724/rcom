@@ -294,11 +294,11 @@ int llclose(int fd){
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
     while(state != STOP &&  (alarmCount <= attempts) ){
-    
+        if(alarmEnabled=FALSE){
             sendSupervisionFrame(fd, A_FSENDER, C_DISC);
             alarm(timeout);
             alarmEnabled=TRUE;
-
+        }
         if(alarmEnabled==TRUE){
                if(read(fd ,byte, 1)>0){
                 switch (state)

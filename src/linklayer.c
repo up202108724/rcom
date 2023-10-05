@@ -206,7 +206,7 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
-    frame[2] = 0; // trama do transmissor
+    frame[2] = info_frame_number_transmitter; 
     frame[3] = frame[1] ^ frame[2];
     memcpy(frame + 4, buf, bufSize);
     unsigned char BCC2 = buf[0];
@@ -243,16 +243,30 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
             write(fd, frame, frameSize);
             unsigned char result = readControlByte(fd);
             if(result==0) continue;
-            
+            else if(result==C_REJ(0) || result==C_REJ(1)){
+                reject=1;
+            }
+            else if (result==C_RR(0) || result==C_RR(1)){
+                accept=1;
+                info_frame_number_transmitter= (info_frame_number_transmitter+1)%2;
+
+            }
         }
+        if(accept==1){
+            break;
+        }
+        current_transmission++;
         
     }
-    
 
-
-
-
-
+    free(frame);
+    if(accept==1){
+        return frameSize;
+    }
+    else{
+        llclose(fd);
+        return -1;
+    }
     
     
 }

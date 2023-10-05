@@ -68,6 +68,7 @@ int sendSupervisionFrame(int fd, unsigned char A, unsigned char C){
 }
 
 int llopen(LinkLayer sp_config, Role role){
+    alarmCount=0;
     int fd= establish_connection(sp_config.serialPort);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
@@ -77,7 +78,7 @@ int llopen(LinkLayer sp_config, Role role){
 
             case Transmissor:
             (void)signal(SIGALRM, alarmHandler);
-            while(alarmCount > sp_config.numTransmissions){
+            while(alarmCount < sp_config.numTransmissions){
             if(alarmEnabled=FALSE){
             sendSupervisionFrame(fd, A_FSENDER, C_SET);
             alarm(timeout);
@@ -193,6 +194,7 @@ int llopen(LinkLayer sp_config, Role role){
                 
         }
     default:
+        
         return -1;
         break;
 
@@ -201,7 +203,7 @@ return fd;
 }
 
 int llwrite(int fd, unsigned char *buf, int bufSize){
-
+    alarmCount=0;
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
@@ -217,7 +219,7 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     int j = 4;
     for (int i = 0; i < bufSize; i++)
     {
-        if (buf[i] == FLAG || buff[i] == ESC)
+        if (buf[i] == FLAG || buf[i] == ESC)
         {
             frame = realloc(frame,frameSize + 1);
             frame[j++] = ESC;
@@ -234,11 +236,14 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     int accept = 0;
     while (current_transmission<attempts)
     {
-        alarmEnabled=FALSE;
+        if(alarmEnabled==FALSE){
+        
         alarm(timeout);
         reject=0;
         accept=0;
-        while (reject==0 && accept==0 && alarmEnabled==FALSE)
+        alarmEnabled=TRUE;
+        }
+        while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
             write(fd, frame, frameSize);
             unsigned char result = readControlByte(fd);
@@ -271,7 +276,7 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     
 }
 int llread(int fd, unsigned char *buf){
-
+    
     char byte;
     char control_field;
     int data_byte_counter=0;
@@ -354,7 +359,7 @@ int llread(int fd, unsigned char *buf){
 }
 
 int llclose(int fd){
-    
+    alarmCount=0;
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
@@ -429,7 +434,8 @@ unsigned char readControlByte(int fd){
     unsigned char control_byte = 0;
     LinkLayerState state = START;
 
-    while (state != STOP && alarmTriggered == FALSE){
+    while (state != STOP && alarmEnabled == TRUE){ // A SER REVISTA A LÓGICA DO ALARM ENABLED AQUI
+        
         if(read(fd, &byte, 1) > 0){
 
             switch (state)

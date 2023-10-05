@@ -67,14 +67,14 @@ int sendSupervisionFrame(int fd, unsigned char A, unsigned char C){
     return write(fd, FRAME, 5);
 }
 
-int llopen(LinkLayer sp_config, Role role){
+int llopen(LinkLayer sp_config){
     alarmCount=0;
     int fd= establish_connection(sp_config.serialPort);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
     unsigned char *byte;
-    switch (role){
+    switch (sp_config.role){
 
             case Transmissor:
             (void)signal(SIGALRM, alarmHandler);

@@ -202,6 +202,57 @@ return fd;
 
 int llwrite(int fd, unsigned char *buf, int bufSize){
 
+    int frameSize = 6 + bufSize;
+    unsigned char *frame = (unsigned char *)malloc(frameSize);
+    frame[0] = FLAG;
+    frame[1] = A_FSENDER;
+    frame[2] = 0; // trama do transmissor
+    frame[3] = frame[1] ^ frame[2];
+    memcpy(frame + 4, buf, bufSize);
+    unsigned char BCC2 = buf[0];
+    for (int i = 1; i < bufSize; i++)
+    {
+        BCC2 ^= buf[i];
+    }
+    int j = 4;
+    for (int i = 0; i < bufSize; i++)
+    {
+        if (buf[i] == FLAG || buff[i] == ESC)
+        {
+            frame = realloc(frame,frameSize + 1);
+            frame[j++] = ESC;
+
+        }
+       frame[j++] = buf[i];
+    }
+
+    frame[j++] = BCC2;
+    frame[j++] = FLAG;
+    frameSize = j;
+    int current_transmission = 0;
+    int reject = 0;
+    int accept = 0;
+    while (current_transmission<attempts)
+    {
+        alarmEnabled=FALSE;
+        alarm(timeout);
+        reject=0;
+        accept=0;
+        while (reject==0 && accept==0 && alarmEnabled==FALSE)
+        {
+            write(fd, frame, frameSize);
+            unsigned char result = readControlByte(fd);
+            if(result==0) continue;
+            
+        }
+        
+    }
+    
+
+
+
+
+
     
     
 }
@@ -357,6 +408,74 @@ int llclose(int fd){
         }
     }
 
+
+unsigned char readControlByte(int fd){
+
+    unsigned char byte = 0;
+    unsigned char control_byte = 0;
+    LinkLayerState state = START;
+
+    while (state != STOP && alarmTriggered == FALSE){
+        if(read(fd, &byte, 1) > 0){
+
+            switch (state)
+            {
+            case START:
+                if(byte == FLAG){
+                    state = FLAG_RCV;
+                }
+                break;
+            
+            case FLAG_RCV:
+                if(byte == A_FRECEIVER){
+                    state = A_RCV;
+                }
+                else if(byte != FLAG){
+                    state = START;
+                }
+                break;
+
+            case A_RCV:
+                if(byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1) || byte == C_DISC){
+                    state = C_RCV;
+                    control_byte = byte;
+
+                }
+                else if (byte != FLAG) state = START;
+                else{
+                    state = FLAG_RCV;
+                }
+                break;
+            case C_RCV:
+                if(byte == A_FRECEIVER ^ control_byte){
+                    state = BCC1;
+                }
+                else if(byte != FLAG){
+                    state = START;
+                }
+                else{
+                    state = FLAG_RCV;
+                }
+                break;
+            case BCC1:
+                if(byte == FLAG){
+                    state = STOP;
+                }
+                else{
+                    state = START;
+                }
+                break;
+            default:
+                break;
+            }
+
+
+        }
+    }
+
+    return control_byte;
+
+}
 
 
 

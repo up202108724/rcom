@@ -73,6 +73,16 @@ int llread(int fd, unsigned char *buf);
 // Return "1" on success or "-1" on error.
 int llclose(int fd);
 
+int sendSupervisionFrame(int fd, unsigned char A, unsigned char C);
+
+int establish_connection(const char *port);
+
+void alarmHandler(int signal);
+
+unsigned char readControlByte(int fd);
+
+
+
 
 
 #endif

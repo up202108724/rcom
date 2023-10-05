@@ -363,7 +363,7 @@ int llclose(int fd){
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
-    while(state != STOP &&  (alarmCount <= attempts) ){
+    while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled=FALSE){
             sendSupervisionFrame(fd, A_FSENDER, C_DISC);
             alarm(timeout);

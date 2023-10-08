@@ -18,5 +18,18 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         perror("Connection error\n");
         return -1;
     }
+    if(sp_config.role==Transmissor){
+        FILE *file = fopen(filename, "rb");
+        if(file==NULL){
+            perror("Error opening file\n");
+            return -1;
+        }
+        int curr = ftell(file);
+        fseek(file, 0, SEEK_END);
+        long int file_size = ftell(file) - curr;
+        fseek(file, curr, SEEK_SET);
+
+
+    }
 
 }

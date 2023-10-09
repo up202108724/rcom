@@ -33,3 +33,36 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
     }
 
 }
+
+unsigned char * getStartPacket(const unsigned int c, const char* filename, long int length, unsigned int* size){
+	
+	int L1 = ceil( log2(length ) / 8);
+	int L2 = strlen(filename);
+	*size = 1 + 1 + 1 + L1 + 2 + L2;
+	unsigned char *packet = malloc(*size);
+	int i = 0;
+	packet[i++]= c;
+    packet[i++]= 0;
+    packet[i++] = L1;
+    
+    for (unsigned char j = 0 ; j < L1 ; j++) {
+        packet[2+L1-j] = length & 0xFF;
+        length >>= 8;
+    }	
+	
+	i+=L1;
+	packet[i++]=1;
+    packet[i++]=L2;
+    memcpy(packet+i, filename, L2);
+    return packet;
+	
+}
+
+unsigned char * getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *size){
+	
+	*size = 1 + 1 + 2 + dataSize;
+	unsigned char *packet = malloc(*size);
+	
+	
+	
+}

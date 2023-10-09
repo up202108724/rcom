@@ -70,7 +70,7 @@ int llopen(LinkLayer sp_config, Role role){
 
             case Transmissor:
             (void)signal(SIGALRM, alarmHandler);
-            while(alarmCount < sp_config.numTransmissions){
+            while(alarmCount < sp_config.numTransmissions && state!=STOP){
             if(alarmEnabled=FALSE){
             sendSupervisionFrame(fd, A_FSENDER, C_SET);
             alarm(timeout);
@@ -426,8 +426,7 @@ unsigned char readControlByte(int fd){
     unsigned char control_byte = 0;
     LinkLayerState state = START;
 
-    while (state != STOP && alarmEnabled == TRUE){ // A SER REVISTA A LÓGICA DO ALARM ENABLED AQUI
-        
+    while (state != STOP && alarmEnabled == TRUE){ 
         if(read(fd, &byte, 1) > 0){
 
             switch (state)

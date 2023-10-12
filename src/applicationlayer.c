@@ -62,6 +62,13 @@ unsigned char * getDataPacket(unsigned char sequence, unsigned char *data, int d
 	
 	*size = 1 + 1 + 2 + dataSize;
 	unsigned char *packet = malloc(*size);
+    packet[0] = 1;
+    packet[1] = sequence;
+    packet[2] = dataSize >> 8 & 0xFF;
+    packet[3] = dataSize & 0xFF;
+    memcpy(packet+4, data, dataSize);
+
+    return packet;
 	
 	
 	

@@ -10,4 +10,5 @@ unsigned char * getStartPacket(const unsigned int c, const char* filename, long 
 
 unsigned char * getDataPacket(unsigned char sequence, unsigned char *data, int dataSize, int *size);
 
+
 #endif

@@ -7,7 +7,7 @@ int alarmCount = 0;
 unsigned attempts= 0;
 volatile int STOP = FALSE;
 unsigned char info_frame_number_transmitter=0;
-unsigned char info_frame_number_receiver=0;
+unsigned char info_frame_number_receiver=1;
 unsigned timeout=0;
 struct termios oldtio;
 struct termios newtio;
@@ -281,7 +281,7 @@ int llread(int fd, unsigned char *buf){
     
     LinkLayerState state = START;
     while (state!= STOP){
-        if(read(fd, &byte,1) !=0){
+        if(read(fd, &byte,1) >0){
         
         switch (state){
             case START:
@@ -341,19 +341,35 @@ int llread(int fd, unsigned char *buf){
                     if(bcc2==acumulator){
                         state=STOP;
                         sendSupervisionFrame(fd, A_FRECEIVER, C_RR(info_frame_number_receiver));
+                        info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         return data_byte_counter;
+                    }
+                    else{
+                        sendSupervisionFrame(fd, A_FRECEIVER, C_REJ(info_frame_number_receiver));
+                        return -1;
+
                     }
 
                 }
 
                 break;
             case DATA_RECEIVED:
-                data_byte_counter++;
+                state= READING_DATA;
+                if(byte == FLAG){
+                    buf[data_byte_counter++]= ESC;
+                    buf[data_byte_counter++]= 0x5E;
+                }
+                if(byte == ESC){
+                    buf[data_byte_counter++]= ESC;
+                    buf[data_byte_counter++]= 0x5D;
+                }
+                
 
             break;               
         }
     }
-    return -1;}
+   }
+    return -1;
 }
 
 int llclose(int fd){

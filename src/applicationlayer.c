@@ -1,6 +1,9 @@
 
 #include "applicationlayer.h"
 #include "DataLink.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 void setupTransferConditions(char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename){
     LinkLayer sp_config;
     strcpy( sp_config.serialPort ,port);
@@ -72,4 +75,27 @@ unsigned char * getDataPacket(unsigned char sequence, unsigned char *data, int d
 	
 	
 	
+}
+
+unsigned char* getfilecontent(FILE *fd , long int filelength){
+
+    unsigned char* content= (unsigned char*) malloc(filelength);
+    fread( content,sizeof(unsigned char), filelength ,fd);
+    return content;
+}
+
+unsigned char* parseControlPacket(unsigned char *packet, unsigned long int *filesize){
+    unsigned char size_valuefieldsizeNbytes=packet[2]; // size of file size parameter
+    unsigned char placeholder_value_field[size_valuefieldsizeNbytes];
+    memcpy(placeholder_value_field, packet+3 , size_valuefieldsizeNbytes);
+
+    for(int i =0 ; i < size_valuefieldsizeNbytes; i++  ){
+        *filesize |= (placeholder_value_field[size_valuefieldsizeNbytes-i-1]<< (8*i));
+
+    }
+    unsigned char name_valuefieldsizeNbytes=packet[size_valuefieldsizeNbytes+4]; // size of file name parameter
+    unsigned char* placeholder_name_value_field=(unsigned char*) malloc(name_valuefieldsizeNbytes);
+    memcpy(placeholder_value_field, packet+size_valuefieldsizeNbytes+5, name_valuefieldsizeNbytes);
+    
+    return placeholder_name_value_field;
 }

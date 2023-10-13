@@ -202,22 +202,28 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     frame[1] = A_FSENDER;
     frame[2] = info_frame_number_transmitter; 
     frame[3] = frame[1] ^ frame[2];
+
     memcpy(frame + 4, buf, bufSize);
     unsigned char BCC2 = buf[0];
     for (int i = 1; i < bufSize; i++)
     {
         BCC2 ^= buf[i];
+
     }
+    char* bufwithbcc=malloc(bufSize+1);
+    memcpy(bufwithbcc, buf, bufSize);
+    bufwithbcc[bufSize]= BCC2;
     int j = 4;
-    for (int i = 0; i < bufSize; i++)
+    for (int i = 0; i < bufSize+1; i++)
     {
-        if (buf[i] == FLAG || buf[i] == ESC)
+        if (bufwithbcc[i] == FLAG || bufwithbcc[i] == ESC)
         {
             frame = realloc(frame,frameSize + 1);
+            if(frame==NULL){return -1;}
             frame[j++] = ESC;
 
         }
-       frame[j++] = buf[i];
+       frame[j++] = bufwithbcc[i];
     }
 
     frame[j++] = BCC2;

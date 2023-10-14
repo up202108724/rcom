@@ -31,7 +31,45 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         fseek(file, 0, SEEK_END);
         long int file_size = ftell(file) - curr;
         fseek(file, curr, SEEK_SET);
+        unsigned int packet_size;
+        unsigned char* startPacket = getStartPacket(2,filename,file_size,packet_size);
+        if(llwrite(fd,startPacket,packet_size) == -1){
+            printf("Error in start packet\n");
+            exit(-1);
+        }
+        unsigned char* content = getFileContent(file,file_size);
+        long int size = file_size;
+        unsigned char sequence;
+        int dataSize;
+        while(size>=0){
+            if(size > MAX_PAYLOAD_SIZE ){
+              dataSize = MAX_PAYLOAD_SIZE;
+            }
+            else{
+              dataSize = size;
+            }
+            unsigned char* data = (unsigned char* )malloc(dataSize);
+            memcpy(data,content,dataSize);
+            int data_packet_size;
+            unsigned char* dataPacket = getDataPacket(sequence,data,dataSize,&data_packet_size);
+            if(llwrite(fd,dataPacket,data_packet_size)==-1){
+                 printf("Error in data packet\n");
+                 exit(-1);
+            }
+            content+=dataSize;
+            size = size - dataSize;
+            sequence = (sequence + 1) % 255;
 
+        }
+
+        unsigned char* endPacket = getStartPacket(3,filename,file_size,packet_size);
+        if(llwrite(fd,endPacket,packet_size)==-1){
+            printf("Error in end packet\n");
+            exit(-1);
+        }
+
+        llclose(fd);
+        break;
 
     }
 
@@ -77,7 +115,7 @@ unsigned char * getDataPacket(unsigned char sequence, unsigned char *data, int d
 	
 }
 
-unsigned char* getfilecontent(FILE *fd , long int filelength){
+unsigned char* getFileContent(FILE *fd , long int filelength){
 
     unsigned char* content= (unsigned char*) malloc(filelength);
     fread( content,sizeof(unsigned char), filelength ,fd);

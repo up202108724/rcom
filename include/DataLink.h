@@ -28,6 +28,8 @@
 #define C_RR(n) ((n << 7) | 0x05) // Receiver Ready to receive 
 #define C_REJ(n) ((n << 7) | 0x01) // Receiver Rejects to receive
 
+#define C_INF(n) (n << 6)
+
 typedef enum{
 	
 	Transmissor,
@@ -43,7 +45,7 @@ typedef enum {
 	C_RCV,
 	BCC1,
 	READING_DATA,
-	DATA_RECEIVED,
+	DATA_RECEIVED_ESC,
 	BCC2,
 	STOP
 } LinkLayerState;

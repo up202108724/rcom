@@ -200,7 +200,7 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
-    frame[2] = info_frame_number_transmitter; 
+    frame[2] = C_INF(info_frame_number_transmitter); 
     frame[3] = frame[1] ^ frame[2];
 
     memcpy(frame + 4, buf, bufSize);
@@ -221,12 +221,20 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
             frame = realloc(frame,frameSize + 1);
             if(frame==NULL){return -1;}
             frame[j++] = ESC;
-
+            if(bufwithbcc[i] == FLAG){
+                frame[j++]=0x5E;
+            }
+            if(bufwithbcc[i] == ESC){
+                frame[j++]=0x5D;
+                
+            }
         }
+        else{
        frame[j++] = bufwithbcc[i];
+        }
     }
 
-    frame[j++] = BCC2;
+    //frame[j++] = BCC2;
     frame[j++] = FLAG;
     frameSize = j;
     int current_transmission = 0;
@@ -327,7 +335,7 @@ int llread(int fd, unsigned char *buf){
                 state= READING_DATA;
 
             case READING_DATA:
-                if (byte== 0x07){ state= DATA_RECEIVED;}
+                if (byte== 0x7D){ state= DATA_RECEIVED_ESC;}
                 if (byte== FLAG){
                     
                     unsigned char bcc2 = buf[data_byte_counter-1];
@@ -344,6 +352,7 @@ int llread(int fd, unsigned char *buf){
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         return data_byte_counter;
                     }
+                    
                     else{
                         sendSupervisionFrame(fd, A_FRECEIVER, C_REJ(info_frame_number_receiver));
                         return -1;
@@ -351,17 +360,18 @@ int llread(int fd, unsigned char *buf){
                     }
 
                 }
-
-                break;
-            case DATA_RECEIVED:
-                state= READING_DATA;
-                if(byte == FLAG){
-                    buf[data_byte_counter++]= ESC;
-                    buf[data_byte_counter++]= 0x5E;
+                else{
+                    buf[data_byte_counter++]= byte;
                 }
-                if(byte == ESC){
+                break;
+            case DATA_RECEIVED_ESC:
+                state= READING_DATA;
+                if(byte == 0X5E){
+                    buf[data_byte_counter++]= FLAG;
+                }
+                if(byte == 0x5D){
                     buf[data_byte_counter++]= ESC;
-                    buf[data_byte_counter++]= 0x5D;
+                    
                 }
                 
 

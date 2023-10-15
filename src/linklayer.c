@@ -4,6 +4,7 @@ LinkLayerState state = START;
 
 int alarmEnabled = FALSE;
 int alarmCount = 0;
+int fd;
 unsigned attempts= 0;
 volatile int STOP = FALSE;
 unsigned char info_frame_number_transmitter=0;
@@ -21,7 +22,7 @@ void alarmHandler(int signal)
 }
 
 int establish_connection(const char *port){
-    int fd = open(port, O_RDWR | O_NOCTTY);
+    fd = open(port, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
     {
@@ -54,14 +55,14 @@ int establish_connection(const char *port){
     return 0;
 }
 
-int sendSupervisionFrame(int fd, unsigned char A, unsigned char C){
+int sendSupervisionFrame(unsigned char A, unsigned char C){
     unsigned char FRAME[5] = {FLAG, A, C, A ^ C, FLAG};
     return write(fd, FRAME, 5);
 }
 
 int llopen(LinkLayer sp_config, Role role){
     alarmCount=0;
-    int fd= establish_connection(sp_config.serialPort);
+    fd= establish_connection(sp_config.serialPort);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
@@ -72,7 +73,7 @@ int llopen(LinkLayer sp_config, Role role){
             (void)signal(SIGALRM, alarmHandler);
             while(alarmCount < sp_config.numTransmissions && state!=STOP){
             if(alarmEnabled=FALSE){
-            sendSupervisionFrame(fd, A_FSENDER, C_SET);
+            sendSupervisionFrame(A_FSENDER, C_SET);
             alarm(timeout);
             alarmEnabled=TRUE;
             }
@@ -194,7 +195,7 @@ int llopen(LinkLayer sp_config, Role role){
 return fd;
 }
 
-int llwrite(int fd, unsigned char *buf, int bufSize){
+int llwrite(unsigned char *buf, int bufSize){
     alarmCount=0;
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
@@ -247,12 +248,13 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
         alarm(timeout);
         reject=0;
         accept=0;
+        write(fd, frame, frameSize); // só há write quando começa o timeout
         alarmEnabled=TRUE;
         }
         while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
-            write(fd, frame, frameSize);
-            unsigned char result = readControlByte(fd);
+            
+            unsigned char result = readControlByte();
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
                 reject=1;
@@ -260,7 +262,7 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
             else if (result==C_RR(0) || result==C_RR(1)){
                 accept=1;
                 info_frame_number_transmitter= (info_frame_number_transmitter+1)%2;
-
+                // não reseta o número de transmissões
             }
         }
         if(accept==1){
@@ -275,13 +277,13 @@ int llwrite(int fd, unsigned char *buf, int bufSize){
         return frameSize;
     }
     else{
-        llclose(fd);
+        llclose();
         return -1;
     }
     
     
 }
-int llread(int fd, unsigned char *buf){
+int llread(unsigned char *buf){
     
     char byte;
     char control_field;
@@ -318,7 +320,7 @@ int llread(int fd, unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(fd, A_FRECEIVER, C_DISC );
+                    sendSupervisionFrame(A_FRECEIVER, C_DISC );
                     return 0;
                 }
                 else { state=START;}
@@ -348,13 +350,13 @@ int llread(int fd, unsigned char *buf){
 
                     if(bcc2==acumulator){
                         state=STOP;
-                        sendSupervisionFrame(fd, A_FRECEIVER, C_RR(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FRECEIVER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         return data_byte_counter;
                     }
                     
                     else{
-                        sendSupervisionFrame(fd, A_FRECEIVER, C_REJ(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FRECEIVER, C_REJ(info_frame_number_receiver));
                         return -1;
 
                     }
@@ -384,14 +386,14 @@ int llread(int fd, unsigned char *buf){
     return -1;
 }
 
-int llclose(int fd){
+int llclose(){
     alarmCount=0;
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled=FALSE){
-            sendSupervisionFrame(fd, A_FSENDER, C_DISC);
+            sendSupervisionFrame(A_FSENDER, C_DISC);
             alarm(timeout);
             alarmEnabled=TRUE;
         }
@@ -454,7 +456,7 @@ int llclose(int fd){
     }
 
 
-unsigned char readControlByte(int fd){
+unsigned char readControlByte(){
 
     unsigned char byte = 0;
     unsigned char control_byte = 0;

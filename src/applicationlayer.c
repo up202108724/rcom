@@ -21,6 +21,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         perror("Connection error\n");
         return -1;
     }
+    
     if(sp_config.role==Transmissor){
         FILE *file = fopen(filename, "rb");
         if(file==NULL){
@@ -69,8 +70,16 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         }
 
         llclose(fd);
-        break;
+        
 
+    }
+    if(sp_config.role==Receptor){
+        unsigned char *packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
+        int packetsize = -1;
+        while((packetsize = (fd, packet) < 0)){
+         unsigned long int rxFileSize=0;
+         unsigned char* name= parseControlPacket(packet, rxFileSize);   
+        }
     }
 
 }

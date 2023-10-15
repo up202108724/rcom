@@ -13,6 +13,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
     if (strcmp("receiver", role)==0 || strcmp("rx", role)==0) {
         sp_config.role= Receptor;
     }
+    sp_config.baudRate= baudrate;
     sp_config.numTransmissions= numTransmissions;
     sp_config.timeout= timeout;
 
@@ -84,8 +85,19 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         while(1){
             while((packetsize= llread(packet))< 0);
             if(packetsize==0) break;
+            else if(packet[0]!=3){
+                unsigned char *buffer= (unsigned char*) malloc(packetsize);
+                parseDataPacket(packet,packetsize,buffer);
+                fwrite(buffer, sizeof(unsigned char), packetsize-4, newFile);
+                free(buffer);
+                
+            }
+            else continue;
         }
-
+        fclose(newFile);
+    }
+    else{
+        return;
     }
 
 }
@@ -151,4 +163,9 @@ unsigned char* parseControlPacket(unsigned char *packet, unsigned long int *file
     memcpy(placeholder_value_field, packet+size_valuefieldsizeNbytes+5, name_valuefieldsizeNbytes);
     
     return placeholder_name_value_field;
+}
+
+void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char *buffer){
+    memcpy(buffer, packet+4, packetSize-4);
+    buffer+=packetSize+4;
 }

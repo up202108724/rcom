@@ -335,7 +335,6 @@ int llread(unsigned char *buf){
                 }
             case BCC1:
                 state= READING_DATA;
-
             case READING_DATA:
                 if (byte== 0x7D){ state= DATA_RECEIVED_ESC;}
                 if (byte== FLAG){

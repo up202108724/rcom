@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void setupTransferConditions(char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename){
+void applicationLayer(char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename){
     LinkLayer sp_config;
     strcpy( sp_config.serialPort ,port);
     if (strcmp("transmitter", role)==0 || strcmp("tx", role)==0) {
@@ -20,14 +20,14 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
     int fd = llopen(sp_config, sp_config.role);
     if (fd < 0) {
         perror("Connection error\n");
-        return -1;
+        return;
     }
     
     if(sp_config.role==Transmissor){
         FILE *file = fopen(filename, "rb");
         if(file==NULL){
             perror("Error opening file\n");
-            return -1;
+            return;
         }
         int curr = ftell(file);
         fseek(file, 0, SEEK_END);
@@ -37,7 +37,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         unsigned char* startPacket = getStartPacket(2,filename,file_size,packet_size);
         if(llwrite(startPacket,packet_size) == -1){
             printf("Error in start packet\n");
-            exit(-1);
+            return;
         }
         unsigned char* content = getFileContent(file,file_size);
         long int size = file_size;
@@ -56,7 +56,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
             unsigned char* dataPacket = getDataPacket(sequence,data,dataSize,&data_packet_size);
             if(llwrite(dataPacket,data_packet_size)==-1){
                  printf("Error in data packet\n");
-                 exit(-1);
+                 return;
             }
             content+=dataSize;
             size = size - dataSize;
@@ -67,7 +67,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         unsigned char* endPacket = getStartPacket(3,filename,file_size,packet_size);
         if(llwrite(endPacket,packet_size)==-1){
             printf("Error in end packet\n");
-            exit(-1);
+            return;
         }
 
         llclose(fd);

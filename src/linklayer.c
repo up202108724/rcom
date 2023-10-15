@@ -6,7 +6,6 @@ int alarmEnabled = FALSE;
 int alarmCount = 0;
 int fd;
 unsigned attempts= 0;
-volatile int STOP = FALSE;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
 unsigned timeout=0;
@@ -66,19 +65,19 @@ int llopen(LinkLayer sp_config, Role role){
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
-    unsigned char *byte;
+    unsigned char byte;
     switch (role){
 
             case Transmissor:
             (void)signal(SIGALRM, alarmHandler);
             while(alarmCount < sp_config.numTransmissions && state!=STOP){
-            if(alarmEnabled=FALSE){
+            if(alarmEnabled==FALSE){
             sendSupervisionFrame(A_FSENDER, C_SET);
             alarm(timeout);
             alarmEnabled=TRUE;
             }
             while (alarmEnabled==TRUE && state!=STOP){
-            if(read(fd ,byte, 1)>0){
+            if(read(fd ,&byte, 1)>0){
                 switch (state)
                 {
                 case START:
@@ -397,7 +396,7 @@ int llclose(){
             alarmEnabled=TRUE;
         }
         if(alarmEnabled==TRUE){
-               if(read(fd ,byte, 1)>0){
+               if(read(fd ,&byte, 1)>0){
                 switch (state)
                 {
                 case START:

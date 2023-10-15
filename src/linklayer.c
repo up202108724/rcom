@@ -373,7 +373,9 @@ int llread(int fd, unsigned char *buf){
                     buf[data_byte_counter++]= ESC;
                     
                 }
-                
+                else{
+                    return -1;
+                }
 
             break;               
         }

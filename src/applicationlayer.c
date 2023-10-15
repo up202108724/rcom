@@ -34,7 +34,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         fseek(file, curr, SEEK_SET);
         unsigned int packet_size;
         unsigned char* startPacket = getStartPacket(2,filename,file_size,packet_size);
-        if(llwrite(fd,startPacket,packet_size) == -1){
+        if(llwrite(startPacket,packet_size) == -1){
             printf("Error in start packet\n");
             exit(-1);
         }
@@ -53,7 +53,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
             memcpy(data,content,dataSize);
             int data_packet_size;
             unsigned char* dataPacket = getDataPacket(sequence,data,dataSize,&data_packet_size);
-            if(llwrite(fd,dataPacket,data_packet_size)==-1){
+            if(llwrite(dataPacket,data_packet_size)==-1){
                  printf("Error in data packet\n");
                  exit(-1);
             }
@@ -64,7 +64,7 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
         }
 
         unsigned char* endPacket = getStartPacket(3,filename,file_size,packet_size);
-        if(llwrite(fd,endPacket,packet_size)==-1){
+        if(llwrite(endPacket,packet_size)==-1){
             printf("Error in end packet\n");
             exit(-1);
         }
@@ -76,10 +76,16 @@ void setupTransferConditions(char *port, int baudrate, const char *role, unsigne
     if(sp_config.role==Receptor){
         unsigned char *packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
         int packetsize = -1;
-        while((packetsize = (fd, packet) < 0)){
+        while((packetsize = llread(packet) < 0));
          unsigned long int rxFileSize=0;
          unsigned char* name= parseControlPacket(packet, rxFileSize);   
+        
+        FILE* newFile= fopen((char*)name, "wb+");
+        while(1){
+            while((packetsize= llread(packet))< 0);
+            if(packetsize==0) break;
         }
+
     }
 
 }

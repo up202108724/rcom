@@ -358,7 +358,7 @@ int llread(unsigned char *buf){
                     else{
                         sendSupervisionFrame(A_FRECEIVER, C_REJ(info_frame_number_receiver));
                         data_byte_counter=0;
-                        
+                        state= START;
                     }
 
                 }
@@ -377,6 +377,12 @@ int llread(unsigned char *buf){
                 }
                 else{
                     data_byte_counter=0;
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    else{
+                        state=START;
+                    }
                 }
 
             break;
@@ -385,7 +391,7 @@ int llread(unsigned char *buf){
         }
     }
    }
-    return -1;
+return -1;
 }
 
 int llclose(){

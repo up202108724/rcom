@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-void applicationLayer(char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename);
+void applicationLayer(const char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename);
 
 unsigned char * getStartPacket(const unsigned int c, const char* filename, long int length, unsigned int* size);
 

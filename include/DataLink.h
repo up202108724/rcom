@@ -46,7 +46,6 @@ typedef enum {
 	BCC1,
 	READING_DATA,
 	DATA_RECEIVED_ESC,
-	BCC2,
 	STOP
 } LinkLayerState;
 

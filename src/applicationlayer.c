@@ -3,8 +3,9 @@
 #include "DataLink.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
-void applicationLayer(char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename){
+void applicationLayer(const char *port, int baudrate, const char *role, unsigned int numTransmissions, unsigned int timeout, const char *filename){
     LinkLayer sp_config;
     strcpy( sp_config.serialPort ,port);
     if (strcmp("transmitter", role)==0 || strcmp("tx", role)==0) {
@@ -34,7 +35,7 @@ void applicationLayer(char *port, int baudrate, const char *role, unsigned int n
         long int file_size = ftell(file) - curr;
         fseek(file, curr, SEEK_SET);
         unsigned int packet_size;
-        unsigned char* startPacket = getStartPacket(2,filename,file_size,packet_size);
+        unsigned char* startPacket = getStartPacket(2,filename,file_size, &packet_size);
         if(llwrite(startPacket,packet_size) == -1){
             printf("Error in start packet\n");
             return;
@@ -79,7 +80,7 @@ void applicationLayer(char *port, int baudrate, const char *role, unsigned int n
         int packetsize = -1;
         while((packetsize = llread(packet) < 0));
          unsigned long int rxFileSize=0;
-         unsigned char* name= parseControlPacket(packet, rxFileSize);   
+         unsigned char* name= parseControlPacket(packet, &rxFileSize);   
         
         FILE* newFile= fopen((char*)name, "wb+");
         while(1){

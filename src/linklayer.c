@@ -123,6 +123,8 @@ int llopen(LinkLayer sp_config, Role role){
                         state=START;
                     }
                     break;
+                case STOP:
+                    break;    
                 default:
                     break;
                 }
@@ -132,7 +134,7 @@ int llopen(LinkLayer sp_config, Role role){
             }
              }
             case Receptor:
-                if(read(fd, byte, 1)>0){
+                if(read(fd, &byte, 1)>0){
                 
                 switch (state)
                 {
@@ -284,7 +286,7 @@ int llwrite(unsigned char *buf, int bufSize){
 }
 int llread(unsigned char *buf){
     
-    char byte;
+    unsigned char byte;
     char control_field;
     int data_byte_counter=0;
     
@@ -326,7 +328,7 @@ int llread(unsigned char *buf){
                 
 
             case C_RCV:                 
-                if (byte== A_RCV ^ control_field ){
+                if (byte== (A_RCV ^ control_field) ){
                     state= BCC1;
                 }
                 if(byte== FLAG){
@@ -377,7 +379,9 @@ int llread(unsigned char *buf){
                     return -1;
                 }
 
-            break;               
+            break;
+            case STOP:
+                break;               
         }
     }
    }
@@ -390,7 +394,7 @@ int llclose(){
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
     while(state != STOP &&  (alarmCount < attempts) ){
-        if(alarmEnabled=FALSE){
+        if(alarmEnabled==FALSE){
             sendSupervisionFrame(A_FSENDER, C_DISC);
             alarm(timeout);
             alarmEnabled=TRUE;
@@ -442,6 +446,8 @@ int llclose(){
                         state=START;
                     }
                     break;
+                case STOP:
+                     return 0;
                 default:
                     break;
                 }
@@ -451,6 +457,7 @@ int llclose(){
             }
             
         }
+        return -1;
     }
 
 
@@ -492,7 +499,7 @@ unsigned char readControlByte(){
                 }
                 break;
             case C_RCV:
-                if(byte == A_FRECEIVER ^ control_byte){
+                if(byte == (A_FRECEIVER ^ control_byte)){
                     state = BCC1;
                 }
                 else if(byte != FLAG){
@@ -510,6 +517,8 @@ unsigned char readControlByte(){
                     state = START;
                 }
                 break;
+            case STOP:
+                 return control_byte;
             default:
                 break;
             }

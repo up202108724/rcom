@@ -65,7 +65,7 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
 
         }
 
-        unsigned char* endPacket = getStartPacket(3,filename,file_size,packet_size);
+        unsigned char* endPacket = getStartPacket(3,filename,file_size,&packet_size);
         if(llwrite(endPacket,packet_size)==-1){
             printf("Error in end packet\n");
             return;
@@ -79,7 +79,7 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
         unsigned char *packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
         int packetsize = llread(packet);
         if(packetsize<0){
-            return -1;
+            return;
         }
         
         unsigned long int rxFileSize=0;
@@ -87,9 +87,10 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
         
         FILE* newFile= fopen((char*)name, "wb+");
         while(1){
-            while((packetsize= llread(packet))< 0);
-            if(packetsize==0) break;
-            else if(packet[0]!=3){
+            packetsize= llread(packet);
+            if(packetsize< 0){ return;}
+            if(packetsize==0) {break;}
+            else if(packet[0]==1 && ((packet[1]* 256 + packet[2])== packetsize-3) ){
                 unsigned char *buffer= (unsigned char*) malloc(packetsize);
                 parseDataPacket(packet,packetsize,buffer);
                 fwrite(buffer, sizeof(unsigned char), packetsize-4, newFile);

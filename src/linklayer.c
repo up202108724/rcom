@@ -337,7 +337,7 @@ int llread(unsigned char *buf){
             case BCC1:
                 state= READING_DATA;
             case READING_DATA:
-                if (byte== 0x7D){ state= DATA_RECEIVED_ESC;}
+                if (byte== ESC){ state= DATA_RECEIVED_ESC;}
                 if (byte== FLAG){
                     
                     unsigned char bcc2 = buf[data_byte_counter-1];
@@ -357,8 +357,8 @@ int llread(unsigned char *buf){
                     
                     else{
                         sendSupervisionFrame(A_FRECEIVER, C_REJ(info_frame_number_receiver));
-                        return -1;
-
+                        data_byte_counter=0;
+                        
                     }
 
                 }
@@ -376,7 +376,7 @@ int llread(unsigned char *buf){
                     
                 }
                 else{
-                    return -1;
+                    data_byte_counter=0;
                 }
 
             break;

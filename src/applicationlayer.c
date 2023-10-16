@@ -77,10 +77,13 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
     }
     if(sp_config.role==Receptor){
         unsigned char *packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
-        int packetsize = -1;
-        while((packetsize = llread(packet) < 0));
-         unsigned long int rxFileSize=0;
-         unsigned char* name= parseControlPacket(packet, &rxFileSize);   
+        int packetsize = llread(packet);
+        if(packetsize<0){
+            return -1;
+        }
+        
+        unsigned long int rxFileSize=0;
+        unsigned char* name= parseControlPacket(packet, &rxFileSize);   
         
         FILE* newFile= fopen((char*)name, "wb+");
         while(1){

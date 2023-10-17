@@ -86,20 +86,33 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
         unsigned char* name= parseControlPacket(packet, &rxFileSize);   
         
         FILE* newFile= fopen((char*)name, "wb+");
+        if (newFile!=NULL){perror("Error Creating file");}
         while(1){
             packetsize= llread(packet);
             if(packetsize< 0){ return;}
             if(packetsize==0) {break;}
-            else if(packet[0]==1 && ((packet[1]* 256 + packet[2])== packetsize-3) ){
+            switch (packet[0])
+            {
+            case DATA_PACKET:
+
+                if((packet[1]* 256 + packet[2])== packetsize-3){
                 unsigned char *buffer= (unsigned char*) malloc(packetsize);
                 parseDataPacket(packet,packetsize,buffer);
                 fwrite(buffer, sizeof(unsigned char), packetsize-4, newFile);
                 free(buffer);
+                }
+                break;
+            
+            case END_PACKET:
                 
+                //if((packet[1]==0 &&(packet[2]==1 || packet[2]==0) && ((packet+2+)))) 
+                break;     
+            default:
+                break;
             }
-            else continue;
         }
         fclose(newFile);
+    
     }
     else{
         return;

@@ -204,7 +204,7 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[1] = A_FSENDER;
     frame[2] = C_INF(info_frame_number_transmitter); 
     frame[3] = frame[1] ^ frame[2];
-
+    alarmEnabled=FALSE;
     memcpy(frame + 4, buf, bufSize);
     unsigned char BCC2 = buf[0];
     for (int i = 1; i < bufSize; i++)

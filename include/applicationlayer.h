@@ -15,4 +15,8 @@ unsigned char* getFileContent(FILE *fd , long int filelength);
 unsigned char* parseControlPacket(unsigned char *packet, unsigned long int *filesize);
 
 void parseDataPacket(const unsigned char* packet, const unsigned int packetSize, unsigned char *buffer);
+
+#define DATA_PACKET 2
+#define END_PACKET 3
+
 #endif

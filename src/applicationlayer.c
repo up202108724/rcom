@@ -18,8 +18,8 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
     sp_config.numTransmissions= numTransmissions;
     sp_config.timeout= timeout;
 
-    int fd = llopen(sp_config, sp_config.role);
-    if (fd < 0) {
+    int fd = llopen(sp_config);
+    if (fd = 1) {
         perror("Connection error\n");
         return;
     }

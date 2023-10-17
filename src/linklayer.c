@@ -2,8 +2,8 @@
 
 LinkLayerState state = START;
 
-int alarmEnabled = FALSE;
-int alarmCount = 0;
+volatile alarmEnabled = FALSE;
+volatile int alarmCount = 0;
 int fd;
 unsigned attempts= 0;
 unsigned char info_frame_number_transmitter=0;
@@ -43,6 +43,9 @@ int establish_connection(const char *port){
     newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
+    newtio.c_lflag = 0;
+    newtio.c_cc[VTIME] = 0; // Inter-character timer unused
+    newtio.c_cc[VMIN] = 0;  // Not blocking the read at all
     tcflush(fd, TCIOFLUSH);
 
     // Set new port settings
@@ -59,14 +62,14 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
     return write(fd, FRAME, 5);
 }
 
-int llopen(LinkLayer sp_config, Role role){
+int llopen(LinkLayer sp_config){
     alarmCount=0;
     fd= establish_connection(sp_config.serialPort);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
     unsigned char byte;
-    switch (role){
+    switch (sp_config.role){
 
             case Transmissor:
             (void)signal(SIGALRM, alarmHandler);
@@ -189,11 +192,11 @@ int llopen(LinkLayer sp_config, Role role){
         }
     default:
         
-        return -1;
+        return 1;
         break;
 
 }
-return fd;
+return 0;
 }
 
 int llwrite(unsigned char *buf, int bufSize){
@@ -212,7 +215,7 @@ int llwrite(unsigned char *buf, int bufSize){
         BCC2 ^= buf[i];
 
     }
-    char* bufwithbcc=malloc(bufSize+1);
+    unsigned char* bufwithbcc=(unsigned char*)malloc(bufSize+1);
     memcpy(bufwithbcc, buf, bufSize);
     bufwithbcc[bufSize]= BCC2;
     int j = 4;

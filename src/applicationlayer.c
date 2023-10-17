@@ -71,7 +71,7 @@ void applicationLayer(const char *port, int baudrate, const char *role, unsigned
             return;
         }
 
-        llclose(fd);
+        llclose();
         
 
     }

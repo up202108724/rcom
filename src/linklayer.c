@@ -2,7 +2,7 @@
 
 LinkLayerState state = START;
 
-volatile alarmEnabled = FALSE;
+volatile int alarmEnabled = FALSE;
 volatile int alarmCount = 0;
 int fd;
 unsigned attempts= 0;

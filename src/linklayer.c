@@ -71,7 +71,7 @@ int llopen(LinkLayer sp_config){
     unsigned char byte;
     switch (sp_config.role){
 
-            case Transmissor:
+            case Transmissor: {
             (void)signal(SIGALRM, alarmHandler);
             while(alarmCount < sp_config.numTransmissions && state!=STOP){
             if(alarmEnabled==FALSE){
@@ -118,6 +118,7 @@ int llopen(LinkLayer sp_config){
                     else{
                         state=START;
                     }
+                break;    
                 case BCC1:
                     if(byte==FLAG){
                         state=STOP;
@@ -136,7 +137,9 @@ int llopen(LinkLayer sp_config){
             }
             }
              }
-            case Receptor:
+             break;
+    } 
+            case Receptor:{
                 if(read(fd, &byte, 1)>0){
                 
                 switch (state)
@@ -190,8 +193,10 @@ int llopen(LinkLayer sp_config){
                 
                 
         }
+            break;
+            }
     default:
-        
+
         return 1;
         break;
 

@@ -19,6 +19,7 @@ void alarmHandler(int signal)
     alarmCount++;
 
     printf("Alarm #%d\n", alarmCount);
+    fflush(stdout);
 }
 
 int establish_connection(const char* port, LinkLayer sp_config){
@@ -44,8 +45,14 @@ int establish_connection(const char* port, LinkLayer sp_config){
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
     newtio.c_lflag = 0;
+    
     newtio.c_cc[VTIME] = 0; // Inter-character timer unused
-    newtio.c_cc[VMIN] = 0;  // Not blocking the read at all
+    if(sp_config.role==Transmissor){
+    newtio.c_cc[VMIN] = 0;// Not blocking the read at all
+    }
+    if(sp_config.role==Receptor){
+    newtio.c_cc[VMIN] = 1;
+    }   
     tcflush(fd, TCIOFLUSH);
 
     // Set new port settings
@@ -119,6 +126,7 @@ int llopen(LinkLayer sp_config) {
                         case BCC1:
                             if (byte == FLAG) {
                                 state = STOP;
+                                printf("reached!!!");
                             } else {
                                 state = START;
                             }
@@ -200,7 +208,8 @@ int llopen(LinkLayer sp_config) {
 
 
 int llwrite(unsigned char *buf, int bufSize){
-    //alarmCount=0;
+    alarmCount=0;
+    printf("Reached llwrite!");
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
@@ -288,7 +297,7 @@ int llwrite(unsigned char *buf, int bufSize){
     
 }
 int llread(unsigned char *buf){
-    
+    printf("Reached llread!");
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
@@ -398,10 +407,11 @@ return -1;
 }
 
 int llclose(){
-    //alarmCount=0;
+    alarmCount=0;
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
+    printf("Reached llclose!");
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
             sendSupervisionFrame(A_FSENDER, C_DISC);

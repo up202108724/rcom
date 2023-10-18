@@ -9,6 +9,7 @@ unsigned attempts= 0;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
 unsigned timeout=0;
+unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
 
@@ -20,7 +21,7 @@ void alarmHandler(int signal)
     printf("Alarm #%d\n", alarmCount);
 }
 
-int establish_connection(const char *port){
+int establish_connection(const char *port, LinkLayer sp_config){
     fd = open(port, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
@@ -40,7 +41,7 @@ int establish_connection(const char *port){
         return -1;
     }
     memset(&newtio, 0, sizeof(newtio));
-    newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
+    newtio.c_cflag = sp_config.baudRate | CS8 | CLOCAL | CREAD;
     newtio.c_iflag = IGNPAR;
     newtio.c_oflag = 0;
     newtio.c_lflag = 0;
@@ -63,18 +64,21 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 }
 
 int llopen(LinkLayer sp_config){
+    (void)signal(SIGALRM, alarmHandler);
     alarmCount=0;
-    fd= establish_connection(sp_config.serialPort);
+    fd= establish_connection(sp_config.serialPort, sp_config);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
+    printf("%d",attempts);
+    printf("%d",timeout);
     unsigned char byte;
     switch (sp_config.role){
 
             case Transmissor: {
-            (void)signal(SIGALRM, alarmHandler);
-            while(alarmCount < sp_config.numTransmissions && state!=STOP){
+            while(alarmCount < attempts && state!=STOP){
             if(alarmEnabled==FALSE){
+            
             sendSupervisionFrame(A_FSENDER, C_SET);
             alarm(timeout);
             alarmEnabled=TRUE;
@@ -179,6 +183,7 @@ int llopen(LinkLayer sp_config){
                     else{
                         state=START;
                     }
+                    break;
                 case BCC1:
                     if(byte==FLAG){
                         state=STOP;
@@ -247,10 +252,10 @@ int llwrite(unsigned char *buf, int bufSize){
     //frame[j++] = BCC2;
     frame[j++] = FLAG;
     frameSize = j;
-    int current_transmission = 0;
+    
     int reject = 0;
     int accept = 0;
-    while (current_transmission<attempts)
+    while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
         
@@ -277,7 +282,7 @@ int llwrite(unsigned char *buf, int bufSize){
         if(accept==1){
             break;
         }
-        current_transmission++;
+        
         
     }
 

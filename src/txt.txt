@@ -7,8 +7,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "applicationlayer.h"
-#include "DataLink.h"
+#include "../include/application_layer.h"
+#include "../include/link_layer.h"
 
 #define C_DATA 1
 #define C_START 2
@@ -28,7 +28,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         stat(filename, &st);
         unsigned long size = (unsigned long) st.st_size;
 
-        unsigned char* control_packet = (unsigned char*) malloc(11);
+        unsigned char control_packet = (unsigned char) malloc (11);
         control_packet[0] = C_START;
         control_packet[1] = 0;
         control_packet[2] = 8;
@@ -45,7 +45,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         strcpy(connectionParameters.serialPort, serialPort);
         connectionParameters.role = role;
         connectionParameters.baudRate = baudRate;
-        connectionParameters.numTransmissions = nTries;
+        connectionParameters.nRetransmissions = nTries;
         connectionParameters.timeout = timeout;
 
         if (llopen(connectionParameters) == -1) {
@@ -116,7 +116,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         strcpy(connectionParameters.serialPort, serialPort);
         connectionParameters.role = role;
         connectionParameters.baudRate = baudRate;
-        connectionParameters.numTransmissions = nTries;
+        connectionParameters.nRetransmissions = nTries;
         connectionParameters.timeout = timeout;
 
         if (llopen(connectionParameters) == -1) {

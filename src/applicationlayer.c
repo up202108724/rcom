@@ -89,7 +89,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         free(control_packet);
 
-        if (llclose(0) == -1) {
+        if (llclose() == -1) {
             printf("Error closing connection.\n");
             return;
         }

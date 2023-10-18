@@ -40,8 +40,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
 
         LinkLayer connectionParameters;
-
-        LinkLayerRole role = LlTx;
+        Role role= Transmissor;
         strcpy(connectionParameters.serialPort, serialPort);
         connectionParameters.role = role;
         connectionParameters.baudRate = baudRate;
@@ -52,7 +51,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-
+        printf("good opening");
         if (llwrite(control_packet, 11) == -1) {
             printf("Error transmitting information.\n");
             return;
@@ -112,7 +111,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         LinkLayer connectionParameters;
 
-        LinkLayerRole role = LlRx;
+        Role role = Receptor;
         strcpy(connectionParameters.serialPort, serialPort);
         connectionParameters.role = role;
         connectionParameters.baudRate = baudRate;
@@ -123,7 +122,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-
+        printf("Good opening");
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         if(llread(buffer) == -1) {
             printf("Error receiving information.\n");

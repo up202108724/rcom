@@ -64,177 +64,131 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
     return write(fd, FRAME, 5);
 }
 
-int llopen(LinkLayer sp_config){
-    //alarmCount=0;
-    (void)signal(SIGALRM, alarmHandler);
-    int check_connection= establish_connection(sp_config.serialPort,sp_config);
-    if (check_connection<0){return -1;}
-    attempts= sp_config.numTransmissions;
-    timeout_= sp_config.timeout;
-    unsigned char byte;
-    switch (sp_config.role){
-
-            case Transmissor: {
-            while((alarmCount < attempts) && state!=STOP){
-            if(alarmEnabled==FALSE){
-            sendSupervisionFrame(A_FSENDER, C_SET);
-            alarm(timeout_);
-            alarmEnabled=TRUE;
-            }
-            
-            while (alarmEnabled==TRUE && state!=STOP){
-            
-            if(read(fd ,&byte, 1)>0){
-                
-                switch (state)
-                {
-                case START:
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    }
-                    break;
-                case FLAG_RCV:
-                    if(byte==A_FRECEIVER){
-                        state=A_RCV;
-                        
-                    }
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    } 
-                    else{
-                        state=START;
-                        
-                    }
-                    break;
-                case A_RCV:
-                    if (byte==C_UA){ state= C_RCV;} 
-                    
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    else{
-                        state=START;
-                    }
-                break;
-                case C_RCV:
-                    if (byte==(C_UA^A_FRECEIVER)){
-                        
-                        state= BCC1;
-                    }
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    }
-                    else{
-                        state=START;
-                    }
-                break;    
-                case BCC1:
-                    if(byte==FLAG){
-                        state=STOP;
-                        
-                    }
-                    else{
-                        state=START;
-                        
-                    }
-                    break;
-                case STOP:
-                    break;    
-                default:
-                    break;
-                }
-                
-
-            }
-            }
-             }
-             break;
-    } 
-            case Receptor:{
-            
-            while(state!=STOP ){    
-                
-                
-                if(read(fd, &byte, 1)>0){
-                
-                switch (state)
-                {
-                case START:
-                    printf("START");
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                        printf("FLAG");
-                    }
-                    break;
-                case FLAG_RCV:
-                    if(byte==A_FSENDER){
-                        state=A_RCV;
-                        
-                    }
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    } 
-                    else{
-                        state=START;
-                    }
-                    break;
-                case A_RCV:
-                    if (byte==C_SET){ state= C_RCV;
-                    }
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    }
-                    else{
-                        state=START;
-                    }
-                break;
-                case C_RCV:
-                    if (byte==(C_SET^A_FSENDER)){
-                        state= BCC1;
-                        
-                    }
-                    else if(byte==FLAG){
-                        state=FLAG_RCV;
-                        
-                    }
-                    else{
-                        state=START;
-                    }
-                    break;
-                case BCC1:
-                    if(byte==FLAG){
-                        state=STOP;
-                        printf("Validated it all");
-                    }
-                    else{
-                        state=START;
-                        
-                    }
-                    break;
-                
-                default:
-                    break;
-                };
-                
-                
-        }
-            }
-            sendSupervisionFrame(A_FRECEIVER,C_UA);
-            break;
-            }
-    default:
-
+int llopen(LinkLayer sp_config) {
+    //alarmCount = 0;
+    (void) signal(SIGALRM, alarmHandler);
+    int check_connection = establish_connection(sp_config.serialPort, sp_config);
+    if (check_connection < 0) {
         return -1;
-        break;
+    }
+    attempts = sp_config.numTransmissions;
+    timeout_ = sp_config.timeout;
+    unsigned char byte;
+    if (sp_config.role == Transmissor) {
+        while ((alarmCount < attempts) && state != STOP) {
+            if (alarmEnabled == FALSE) {
+                if(sendSupervisionFrame(A_FSENDER, C_SET)==-1){return -1;};
+                alarm(timeout_);
+                alarmEnabled = TRUE;
+            }
+            while (alarmEnabled == TRUE && state != STOP) {
+                if (read(fd, &byte, 1) > 0) {
+                    switch (state) {
+                        case START:
+                            if (byte == FLAG) {
+                                state = FLAG_RCV;
+                            }
+                            break;
+                        case FLAG_RCV:
+                            if (byte == A_FRECEIVER) {
+                                state = A_RCV;
+                            } else if (byte == FLAG) {
+                                state = FLAG_RCV;
+                            } else {
+                                state = START;
+                            }
+                            break;
+                        case A_RCV:
+                            if (byte == C_UA) {
+                                state = C_RCV;
+                            } else if (byte == FLAG) {
+                                state = FLAG_RCV;
+                            } else {
+                                state = START;
+                            }
+                            break;
+                        case C_RCV:
+                            if (byte == (C_UA ^ A_FRECEIVER)) {
+                                state = BCC1;
+                            } else if (byte == FLAG) {
+                                state = FLAG_RCV;
+                            } else {
+                                state = START;
+                            }
+                            break;
+                        case BCC1:
+                            if (byte == FLAG) {
+                                state = STOP;
+                            } else {
+                                state = START;
+                            }
+                            break;
+                        case STOP:
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+        if(alarmCount==attempts && state!=STOP){return -1;}
+    } else if (sp_config.role == Receptor) {
+        while (state != STOP) {
+            if (read(fd, &byte, 1) > 0) {
+                switch (state) {
+                    case START:
+                        printf("START");
+                        if (byte == FLAG) {
+                            state = FLAG_RCV;
+                            printf("FLAG");
+                        }
+                        break;
+                    case FLAG_RCV:
+                        if (byte == A_FSENDER) {
+                            state = A_RCV;
+                        } else if (byte == FLAG) {
+                            state = FLAG_RCV;
+                        } else {
+                            state = START;
+                        }
+                        break;
+                    case A_RCV:
+                        if (byte == C_SET) {
+                            state = C_RCV;
+                        } else if (byte == FLAG) {
+                            state = FLAG_RCV;
+                        } else {
+                            state = START;
+                        }
+                        break;
+                    case C_RCV:
+                        if (byte == (C_SET ^ A_FSENDER)) {
+                            state = BCC1;
+                        } else if (byte == FLAG) {
+                            state = FLAG_RCV;
+                        } else {
+                            state = START;
+                        }
+                        break;
+                    case BCC1:
+                        if (byte == FLAG) {
+                            state = STOP;
+                            printf("Validated it all");
+                        } else {
+                            state = START;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        if(sendSupervisionFrame(A_FRECEIVER, C_UA)==-1){return -1;};
+    }
 
+    return 0;
 }
-return 0;
-}
+
 
 int llwrite(unsigned char *buf, int bufSize){
     //alarmCount=0;
@@ -518,56 +472,56 @@ unsigned char readControlByte(){
 
     unsigned char byte = 0;
     unsigned char control_byte = 0;
-    LinkLayerState state = START;
+    LinkLayerState state_ = START;
 
-    while (state != STOP && alarmEnabled == TRUE){ 
+    while (state_ != STOP && alarmEnabled == TRUE){ 
         if(read(fd, &byte, 1) > 0){
 
             switch (state)
             {
             case START:
                 if(byte == FLAG){
-                    state = FLAG_RCV;
+                    state_ = FLAG_RCV;
                 }
                 break;
             
             case FLAG_RCV:
                 if(byte == A_FRECEIVER){
-                    state = A_RCV;
+                    state_ = A_RCV;
                 }
                 else if(byte != FLAG){
-                    state = START;
+                    state_ = START;
                 }
                 break;
 
             case A_RCV:
                 if(byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1) || byte == C_DISC){
-                    state = C_RCV;
+                    state_ = C_RCV;
                     control_byte = byte;
 
                 }
-                else if (byte != FLAG) state = START;
+                else if (byte != FLAG) state_ = START;
                 else{
-                    state = FLAG_RCV;
+                    state_ = FLAG_RCV;
                 }
                 break;
             case C_RCV:
                 if(byte == (A_FRECEIVER ^ control_byte)){
-                    state = BCC1;
+                    state_ = BCC1;
                 }
                 else if(byte != FLAG){
-                    state = START;
+                    state_ = START;
                 }
                 else{
-                    state = FLAG_RCV;
+                    state_ = FLAG_RCV;
                 }
                 break;
             case BCC1:
                 if(byte == FLAG){
-                    state = STOP;
+                    state_ = STOP;
                 }
                 else{
-                    state = START;
+                    state_ = START;
                 }
                 break;
             case STOP:

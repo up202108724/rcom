@@ -8,7 +8,7 @@ int fd;
 unsigned attempts= 0;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
-unsigned timeout=0;
+unsigned timeout_=0;
 unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
@@ -29,7 +29,7 @@ int establish_connection(const char* port, LinkLayer sp_config){
         perror(port);
         exit(-1);
     }
-    printf("Ok, the open is fine \n");
+    
     struct termios oldtio;
     struct termios newtio;
 
@@ -55,6 +55,8 @@ int establish_connection(const char* port, LinkLayer sp_config){
         perror("tcsetattr");
         return -1;
     }
+    printf("New termios structure set\n");
+
     return 0;
 }
 
@@ -64,25 +66,29 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 }
 
 int llopen(LinkLayer sp_config){
+    //alarmCount=0;
     (void)signal(SIGALRM, alarmHandler);
-    alarmCount=0;
     fd= establish_connection(sp_config.serialPort,sp_config);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
-    timeout= sp_config.timeout;
+    timeout_= sp_config.timeout;
     unsigned char byte;
     switch (sp_config.role){
 
             case Transmissor: {
-            while(alarmCount < attempts && state!=STOP){
+            while((alarmCount < attempts) && state!=STOP){
             if(alarmEnabled==FALSE){
-            printf("sending supervision frame");
+            printf("sending supervision frame \n");
             sendSupervisionFrame(A_FSENDER, C_SET);
-            alarm(timeout);
+            alarm(timeout_);
             alarmEnabled=TRUE;
             }
+            printf("looping \n");
+            printf("%d",timeout_);
             while (alarmEnabled==TRUE && state!=STOP){
+            
             if(read(fd ,&byte, 1)>0){
+                printf("read a byte");
                 switch (state)
                 {
                 case START:
@@ -94,7 +100,7 @@ int llopen(LinkLayer sp_config){
                     if(byte==A_FRECEIVER){
                         state=A_RCV;
                     }
-                    if(byte==FLAG){
+                    else if(byte==FLAG){
                         state=FLAG_RCV;
                     } 
                     else{
@@ -103,7 +109,7 @@ int llopen(LinkLayer sp_config){
                     break;
                 case A_RCV:
                     if (byte==C_UA){ state= C_RCV;}
-                    if(byte==FLAG){
+                    else if(byte==FLAG){
                         state=FLAG_RCV;
                     }
                     else{
@@ -114,7 +120,7 @@ int llopen(LinkLayer sp_config){
                     if (byte==(C_UA^A_FRECEIVER)){
                         state= BCC1;
                     }
-                    if(byte==FLAG){
+                    else if(byte==FLAG){
                         state=FLAG_RCV;
                     }
                     else{
@@ -124,6 +130,7 @@ int llopen(LinkLayer sp_config){
                 case BCC1:
                     if(byte==FLAG){
                         state=STOP;
+                        printf("it came to stop");
                     }
                     else{
                         state=START;
@@ -155,7 +162,7 @@ int llopen(LinkLayer sp_config){
                     if(byte==A_FSENDER){
                         state=A_RCV;
                     }
-                    if(byte==FLAG){
+                    else if(byte==FLAG){
                         state=FLAG_RCV;
                     } 
                     else{
@@ -164,7 +171,7 @@ int llopen(LinkLayer sp_config){
                     break;
                 case A_RCV:
                     if (byte==C_SET){ state= C_RCV;}
-                    if(byte==FLAG){
+                    else if(byte==FLAG){
                         state=FLAG_RCV;
                     }
                     else{
@@ -208,7 +215,7 @@ return 0;
 }
 
 int llwrite(unsigned char *buf, int bufSize){
-    alarmCount=0;
+    //alarmCount=0;
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
@@ -257,7 +264,7 @@ int llwrite(unsigned char *buf, int bufSize){
     {
         if(alarmEnabled==FALSE){
         
-        alarm(timeout);
+        alarm(timeout_);
         reject=0;
         accept=0;
         write(fd, frame, frameSize); // só há write quando começa o timeout
@@ -406,14 +413,14 @@ return -1;
 }
 
 int llclose(){
-    alarmCount=0;
+    //alarmCount=0;
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
             sendSupervisionFrame(A_FSENDER, C_DISC);
-            alarm(timeout);
+            alarm(timeout_);
             alarmEnabled=TRUE;
         }
         if(alarmEnabled==TRUE){
@@ -464,6 +471,13 @@ int llclose(){
                     }
                     break;
                 case STOP:
+                      if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+                    {
+                            perror("tcsetattr");
+                            exit(-1);
+                    }
+
+                     close(fd);
                      return 0;
                 default:
                     break;

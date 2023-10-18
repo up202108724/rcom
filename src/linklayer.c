@@ -4,7 +4,7 @@ LinkLayerState state = START;
 
 volatile int alarmEnabled = FALSE;
 volatile int alarmCount = 0;
-int fd;
+int fd=0;
 unsigned attempts= 0;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
@@ -26,8 +26,7 @@ int establish_connection(const char* port, LinkLayer sp_config){
 
     if (fd < 0)
     {
-        perror(port);
-        exit(-1);
+        return -1;
     }
     
     struct termios oldtio;
@@ -68,8 +67,8 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 int llopen(LinkLayer sp_config){
     //alarmCount=0;
     (void)signal(SIGALRM, alarmHandler);
-    fd= establish_connection(sp_config.serialPort,sp_config);
-    if (fd<0){return -1;}
+    int check_connection= establish_connection(sp_config.serialPort,sp_config);
+    if (check_connection<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout_= sp_config.timeout;
     unsigned char byte;
@@ -78,37 +77,40 @@ int llopen(LinkLayer sp_config){
             case Transmissor: {
             while((alarmCount < attempts) && state!=STOP){
             if(alarmEnabled==FALSE){
-            printf("sending supervision frame \n");
             sendSupervisionFrame(A_FSENDER, C_SET);
             alarm(timeout_);
             alarmEnabled=TRUE;
             }
-            printf("looping \n");
-            printf("%d",timeout_);
+            
             while (alarmEnabled==TRUE && state!=STOP){
             
             if(read(fd ,&byte, 1)>0){
-                printf("read a byte");
+                
                 switch (state)
                 {
                 case START:
                     if(byte==FLAG){
                         state=FLAG_RCV;
+                        printf("it received a flag->");
                     }
                     break;
                 case FLAG_RCV:
                     if(byte==A_FRECEIVER){
                         state=A_RCV;
+                        printf("it received a Adress->");
                     }
                     else if(byte==FLAG){
                         state=FLAG_RCV;
+                        printf("it returned to receive a flag->");
                     } 
                     else{
                         state=START;
+                        printf("it came to start again->");
                     }
                     break;
                 case A_RCV:
-                    if (byte==C_UA){ state= C_RCV;}
+                    if (byte==C_UA){ state= C_RCV; 
+                    printf("it received a control->");}
                     else if(byte==FLAG){
                         state=FLAG_RCV;
                     }
@@ -118,10 +120,12 @@ int llopen(LinkLayer sp_config){
                 break;
                 case C_RCV:
                     if (byte==(C_UA^A_FRECEIVER)){
+                        printf("it came to BCC->");
                         state= BCC1;
                     }
                     else if(byte==FLAG){
                         state=FLAG_RCV;
+                        printf("it returned to flag->");
                     }
                     else{
                         state=START;
@@ -134,6 +138,7 @@ int llopen(LinkLayer sp_config){
                     }
                     else{
                         state=START;
+                        printf("start again");
                     }
                     break;
                 case STOP:
@@ -207,7 +212,7 @@ int llopen(LinkLayer sp_config){
             }
     default:
 
-        return 1;
+        return -1;
         break;
 
 }

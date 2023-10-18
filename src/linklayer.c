@@ -133,17 +133,20 @@ int llopen(LinkLayer sp_config) {
         }
         if(alarmCount==attempts && state!=STOP){return -1;}
     } else if (sp_config.role == Receptor) {
+       
         while (state != STOP) {
             if (read(fd, &byte, 1) > 0) {
+               
                 switch (state) {
                     case START:
-                        printf("START");
+            
                         if (byte == FLAG) {
                             state = FLAG_RCV;
-                            printf("FLAG");
+                           
                         }
                         break;
                     case FLAG_RCV:
+                  
                         if (byte == A_FSENDER) {
                             state = A_RCV;
                         } else if (byte == FLAG) {
@@ -153,6 +156,7 @@ int llopen(LinkLayer sp_config) {
                         }
                         break;
                     case A_RCV:
+                    
                         if (byte == C_SET) {
                             state = C_RCV;
                         } else if (byte == FLAG) {
@@ -162,6 +166,7 @@ int llopen(LinkLayer sp_config) {
                         }
                         break;
                     case C_RCV:
+                   
                         if (byte == (C_SET ^ A_FSENDER)) {
                             state = BCC1;
                         } else if (byte == FLAG) {
@@ -171,12 +176,16 @@ int llopen(LinkLayer sp_config) {
                         }
                         break;
                     case BCC1:
+                    printf("Byte: %x\n", byte);
                         if (byte == FLAG) {
+                            printf("STOP");
                             state = STOP;
                             printf("Validated it all");
                         } else {
+                            printf("BCC1");
                             state = START;
                         }
+                        printf("sei la");
                         break;
                     default:
                         break;

@@ -51,7 +51,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-        printf("good opening");
+      
         if (llwrite(control_packet, 11) == -1) {
             printf("Error transmitting information.\n");
             return;

@@ -77,7 +77,7 @@ int llclose();
 
 int sendSupervisionFrame(unsigned char A, unsigned char C);
 
-int establish_connection(const char *port, LinkLayer sp_config);
+int establish_connection(const char* port, LinkLayer sp_config);
 
 void alarmHandler(int signal);
 

@@ -21,7 +21,7 @@ void alarmHandler(int signal)
     printf("Alarm #%d\n", alarmCount);
 }
 
-int establish_connection(const char *port, LinkLayer sp_config){
+int establish_connection(const char* port, LinkLayer sp_config){
     fd = open(port, O_RDWR | O_NOCTTY);
 
     if (fd < 0)
@@ -29,7 +29,7 @@ int establish_connection(const char *port, LinkLayer sp_config){
         perror(port);
         exit(-1);
     }
-    
+    printf("Ok, the open is fine \n");
     struct termios oldtio;
     struct termios newtio;
 
@@ -66,19 +66,17 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 int llopen(LinkLayer sp_config){
     (void)signal(SIGALRM, alarmHandler);
     alarmCount=0;
-    fd= establish_connection(sp_config.serialPort, sp_config);
+    fd= establish_connection(sp_config.serialPort,sp_config);
     if (fd<0){return -1;}
     attempts= sp_config.numTransmissions;
     timeout= sp_config.timeout;
-    printf("%d",attempts);
-    printf("%d",timeout);
     unsigned char byte;
     switch (sp_config.role){
 
             case Transmissor: {
             while(alarmCount < attempts && state!=STOP){
             if(alarmEnabled==FALSE){
-            
+            printf("sending supervision frame");
             sendSupervisionFrame(A_FSENDER, C_SET);
             alarm(timeout);
             alarmEnabled=TRUE;

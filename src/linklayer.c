@@ -126,7 +126,7 @@ int llopen(LinkLayer sp_config) {
                         case BCC1:
                             if (byte == FLAG) {
                                 state = STOP;
-                                printf("reached!!!");
+                                //printf("reached!!!");
                             } else {
                                 state = START;
                             }
@@ -150,7 +150,7 @@ int llopen(LinkLayer sp_config) {
             
                         if (byte == FLAG) {
                             state = FLAG_RCV;
-                           
+                            
                         }
                         break;
                     case FLAG_RCV:
@@ -188,7 +188,7 @@ int llopen(LinkLayer sp_config) {
                         if (byte == FLAG) {
                             printf("STOP");
                             state = STOP;
-                            printf("Validated it all");
+                            //printf("Validated it all");
                         } else {
                             printf("BCC1");
                             state = START;
@@ -260,13 +260,12 @@ int llwrite(unsigned char *buf, int bufSize){
         
         alarm(timeout_);
         reject=0;
-        accept=0;
-        write(fd, frame, frameSize); // só há write quando começa o timeout
+        accept=0; // só há write quando começa o timeout
         alarmEnabled=TRUE;
         }
         while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
-            
+            write(fd, frame, frameSize);
             unsigned char result = readControlByte();
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
@@ -281,10 +280,7 @@ int llwrite(unsigned char *buf, int bufSize){
         if(accept==1){
             break;
         }
-        
-        
     }
-
     free(frame);
     if(accept==1){
         return frameSize;
@@ -293,8 +289,6 @@ int llwrite(unsigned char *buf, int bufSize){
         llclose();
         return -1;
     }
-    
-    
 }
 int llread(unsigned char *buf){
     printf("Reached llread!");
@@ -305,8 +299,9 @@ int llread(unsigned char *buf){
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
-        
+        //printf("Byte: %x\n",byte);
         switch (state){
+            
             case START:
                 if(byte== FLAG){
                     state= FLAG_RCV;
@@ -319,7 +314,7 @@ int llread(unsigned char *buf){
                     state= FLAG_RCV;
                 }
                 else  { state= START;}
-            break;
+                break;
 
             case A_RCV:
                 if(byte== FLAG){
@@ -333,12 +328,12 @@ int llread(unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(A_FRECEIVER, C_DISC );
+                    sendSupervisionFrame(A_FRECEIVER, C_DISC);
                     return 0;
                 }
                 else { state=START;}
                 
-
+                break;
             case C_RCV:                 
                 if (byte== (A_RCV ^ control_field) ){
                     state= BCC1;
@@ -346,8 +341,10 @@ int llread(unsigned char *buf){
                 if(byte== FLAG){
                     state= FLAG_RCV;
                 }
+                break;
             case BCC1:
                 state= READING_DATA;
+                break;
             case READING_DATA:
                 if (byte== ESC){ state= DATA_RECEIVED_ESC;}
                 if (byte== FLAG){
@@ -396,7 +393,6 @@ int llread(unsigned char *buf){
                         state=START;
                     }
                 }
-
             break;
             case STOP:
                 break;               
@@ -457,6 +453,7 @@ int llclose(){
                     else{
                         state=START;
                     }
+                    break;
                 case BCC1:
                     if(byte==FLAG){
                         state=STOP;

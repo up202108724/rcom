@@ -5,12 +5,7 @@
 #include <stdlib.h>
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
-
-typedef enum{
-    LlTx,
-    LlRx,
-}LinkLayerRole;
-
+                      
 #define DATA_PACKET 2
 #define END_PACKET 3
 

@@ -214,7 +214,6 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
     frame[2] = C_INF(info_frame_number_transmitter); 
-    
     frame[3] = frame[1] ^ frame[2];
     alarmEnabled=FALSE;
     memcpy(frame + 4, buf, bufSize);
@@ -235,7 +234,8 @@ int llwrite(unsigned char *buf, int bufSize){
     {
         if (bufwithbcc[i] == FLAG || bufwithbcc[i] == ESC)
         {
-            frame = realloc(frame,frameSize + 1);
+            frameSize= frameSize+1;
+            frame = realloc(frame,frameSize);
             if(frame==NULL){return -1;}
             frame[j++] = ESC;
             if(bufwithbcc[i] == FLAG){
@@ -256,8 +256,7 @@ int llwrite(unsigned char *buf, int bufSize){
 
     //frame[j++] = BCC2;
     frame[j++] = FLAG;
-    frameSize = j;
-    
+    if(j==frameSize){printf("valid size");}
     int reject = 0;
     int accept = 0;
     printf("AlarmEnabled: %d\n", alarmEnabled);
@@ -275,7 +274,7 @@ int llwrite(unsigned char *buf, int bufSize){
         {
             write(fd, frame, frameSize);
             unsigned char result = readControlByte();
-            printf("Result: %x\n", result);
+            //printf("Result: %x\n", result);
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
                 reject=1;

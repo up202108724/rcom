@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "applicationlayer.h"
 #include "DataLink.h"
@@ -27,17 +28,34 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         struct stat st;
         stat(filename, &st);
         unsigned long size = (unsigned long) st.st_size;
+        printf("Size: %lu\n", size);
 
-        unsigned char* control_packet = (unsigned char*) malloc(11);
-        control_packet[0] = C_START;
-        control_packet[1] = 0;
-        control_packet[2] = 8;
+        
+        int L1 = ceil( log2(size ) / 8);
+	    int L2 = strlen(filename);
+        unsigned long size_aux = 1 + 1 + 1 + L1 + 2 + L2;
+        int i = 0;
+        unsigned char* control_packet = (unsigned char*) malloc(size_aux);
+        control_packet[i++] = C_START;
+        control_packet[i++] = 0;
+        control_packet[i++] = L1;
 
-        unsigned long size_aux = size;
-        for (int i = 7; i >= 0; i--) {
-            control_packet[i + 3] = (unsigned char) (0xff & size_aux);
-            size_aux >>= 8;
-        }
+        
+
+        
+       for (unsigned char j = 0 ; j < L1 ; j++) {
+        control_packet[2+L1-j] = size_aux & 0xFF;
+        size_aux >>= 8;
+    }	
+    i += L1;
+    control_packet[i++]=1;
+    control_packet[i++]=L2;
+
+    memcpy(control_packet + i,filename,L2);
+
+
+
+
 
         LinkLayer connectionParameters;
         Role role= Transmissor;
@@ -51,11 +69,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-      
-        if (llwrite(control_packet, 11) == -1) {
+       printf("Good opening");
+        if (llwrite(control_packet, size_aux) == -1) {
             printf("Error transmitting information.1\n");
             return;
         }
+
+        printf("Good llwrite\n");
 
         unsigned long left = size;
 

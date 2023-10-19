@@ -79,7 +79,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         unsigned long left = size;
 
-        unsigned char* data_packet = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
+        unsigned char* data_packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
         unsigned int line_size = MAX_PAYLOAD_SIZE - 3;
 
         while (left > 0) {
@@ -92,7 +92,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             read(fd, data_packet + 3, line_size);
 
             if (llwrite(data_packet, line_size + 3) != line_size + 3) {
-                printf("Error transmitting information.2\n");
+                printf("Failed transmitting data packet.2\n");
                 return;
             }
 
@@ -102,7 +102,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         free(data_packet);
 
         control_packet[0] = C_END;
-        if (llwrite(control_packet, 11) == -1) {
+        if (llwrite(control_packet, size_aux) == -1) {
             printf("Error transmitting information.3\n");
             return;
         }
@@ -139,7 +139,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         connectionParameters.timeout = timeout;
         printf("one");
         if (llopen(connectionParameters) == -1) {
-            printf("Error setting connection.\n");
+            printf("Not opening the serial port.\n");
             return;
         } else{printf("two");}
         printf("Good opening");

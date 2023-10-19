@@ -239,9 +239,11 @@ int llwrite(unsigned char *buf, int bufSize){
             if(frame==NULL){return -1;}
             frame[j++] = ESC;
             if(bufwithbcc[i] == FLAG){
+                frame[j++]=FLAG;
                 frame[j++]=0x5E;
             }
             if(bufwithbcc[i] == ESC){
+                frame[j++]=ESC;
                 frame[j++]=0x5D;
                 
             }
@@ -472,6 +474,7 @@ int llclose(){
                     }
                     break;
                 case STOP:
+                      sendSupervisionFrame(A_FRECEIVER,C_UA);
                       if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");

@@ -31,7 +31,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         printf("Size: %lu\n", size);
 
         
-        int L1 = ceil( log2(size ) / 8);
+        int L1 = ceil( floor(log2(size )) + 1 / 8);
 	    int L2 = strlen(filename);
         unsigned long size_aux = 1 + 1 + 1 + L1 + 2 + L2;
         int i = 0;

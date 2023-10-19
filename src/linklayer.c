@@ -293,7 +293,8 @@ int llwrite(unsigned char *buf, int bufSize){
     printf("frameSize: %d\n", frameSize);
     free(frame);
     if(accept==1){
-        return frameSize;
+        
+        return bufSize;
     }
     else{
         llclose();

@@ -370,13 +370,13 @@ int llread(unsigned char *buf){
 
                     if(bcc2==acumulator){
                         state=STOP;
-                        sendSupervisionFrame(A_FRECEIVER, C_RR(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         return data_byte_counter;
                     }
                     
                     else{
-                        sendSupervisionFrame(A_FRECEIVER, C_REJ(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         data_byte_counter=0;
                         state= START;
                     }
@@ -515,7 +515,7 @@ unsigned char readControlByte(){
                 break;
             
             case FLAG_RCV:
-                if(byte == A_FRECEIVER){
+                if(byte == A_FSENDER){
                     state_ = A_RCV;
                 }
                 else if(byte != FLAG){
@@ -535,7 +535,7 @@ unsigned char readControlByte(){
                 }
                 break;
             case C_RCV:
-                if(byte == (A_FRECEIVER ^ control_byte)){
+                if(byte == (A_FSENDER ^ control_byte)){
                     state_ = BCC1;
                 }
                 else if(byte != FLAG){
@@ -553,8 +553,6 @@ unsigned char readControlByte(){
                     state_ = START;
                 }
                 break;
-            case STOP:
-                 return control_byte;
             default:
                 break;
             }

@@ -77,29 +77,42 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         printf("Good llwrite\n");
 
-        unsigned long left = size;
+        unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * size);  
+        read(fd, content, size);
 
-        unsigned char* data_packet = (unsigned char*) malloc(MAX_PAYLOAD_SIZE);
-        unsigned int line_size = MAX_PAYLOAD_SIZE - 3;
+        long int bytesLeft = size;
+        unsigned char sequence = 0;
 
-        while (left > 0) {
-            if (left <= line_size) line_size = left;
+        
 
-            data_packet[0] = C_DATA;
-            data_packet[2] = (unsigned char) (0xff & (line_size));
-            data_packet[1] = (unsigned char) (0xff & ((line_size) >> 8));
-            
-            read(fd, data_packet + 3, line_size);
+        while (bytesLeft >= 0) {
+            int dataSize = bytesLeft > (long int) MAX_PAYLOAD_SIZE ? MAX_PAYLOAD_SIZE : bytesLeft;
+            unsigned char* data = (unsigned char*) malloc(dataSize);
+            memcpy(data, content, dataSize);
+            int packetSize;
+            packetSize = 1 + 1 + 2 + dataSize;
+            unsigned char* packet = (unsigned char*)malloc(packetSize);
+            packet[0] = 1;
+            packet[1] = sequence;
+            packet[3] = dataSize & 0xFF;
+            packet[2] = (dataSize >> 8) & 0xFF;
+            memcpy(packet + 4, data, dataSize);
+            printf("packet[10] = %d\n", packet[10]);
 
-            if (llwrite(data_packet, line_size + 3) != line_size + 3) {
+
+            if (llwrite(packet, packetSize) == -1) {
                 printf("Failed transmitting data packet.2\n");
                 return;
             }
 
-            left -= line_size;
+            
+
+            bytesLeft -= (long int) MAX_PAYLOAD_SIZE; 
+            sequence = (sequence + 1) % 255;
+            content += dataSize; 
         }
 
-        free(data_packet);
+        printf("Good llwrite2\n");
 
         control_packet[0] = C_END;
         if (llwrite(control_packet, size_aux) == -1) {

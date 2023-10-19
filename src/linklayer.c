@@ -126,7 +126,7 @@ int llopen(LinkLayer sp_config) {
                         case BCC1:
                             if (byte == FLAG) {
                                 state = STOP;
-                                //printf("reached!!!");
+                                printf("reached!!!");
                             } else {
                                 state = START;
                             }
@@ -184,16 +184,15 @@ int llopen(LinkLayer sp_config) {
                         }
                         break;
                     case BCC1:
-                    printf("Byte: %x\n", byte);
+                 
                         if (byte == FLAG) {
-                            printf("STOP");
                             state = STOP;
-                            //printf("Validated it all");
+                            printf("Validated it all");
                         } else {
                             printf("BCC1");
                             state = START;
                         }
-                        printf("sei la");
+                       
                         break;
                     default:
                         break;
@@ -215,15 +214,19 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
     frame[2] = C_INF(info_frame_number_transmitter); 
+    
     frame[3] = frame[1] ^ frame[2];
     alarmEnabled=FALSE;
     memcpy(frame + 4, buf, bufSize);
     unsigned char BCC2 = buf[0];
+    printf("buf[0]: %x\n", buf[0]);
     for (int i = 1; i < bufSize; i++)
     {
         BCC2 ^= buf[i];
+        
 
     }
+
     unsigned char* bufwithbcc=(unsigned char*)malloc(bufSize+1);
     memcpy(bufwithbcc, buf, bufSize);
     bufwithbcc[bufSize]= BCC2;
@@ -248,12 +251,14 @@ int llwrite(unsigned char *buf, int bufSize){
         }
     }
 
+
     //frame[j++] = BCC2;
     frame[j++] = FLAG;
     frameSize = j;
     
     int reject = 0;
     int accept = 0;
+    printf("AlarmEnabled: %d\n", alarmEnabled);
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -263,10 +268,12 @@ int llwrite(unsigned char *buf, int bufSize){
         accept=0; // só há write quando começa o timeout
         alarmEnabled=TRUE;
         }
+      
         while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
             write(fd, frame, frameSize);
             unsigned char result = readControlByte();
+            printf("Result: %x\n", result);
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
                 reject=1;
@@ -277,10 +284,12 @@ int llwrite(unsigned char *buf, int bufSize){
                 // não reseta o número de transmissões
             }
         }
+        
         if(accept==1){
             break;
         }
     }
+    printf("frameSize: %d\n", frameSize);
     free(frame);
     if(accept==1){
         return frameSize;
@@ -492,8 +501,9 @@ unsigned char readControlByte(){
 
     while (state_ != STOP && alarmEnabled == TRUE){ 
         if(read(fd, &byte, 1) > 0){
+            printf("byte: %x\n", byte);
 
-            switch (state)
+            switch (state_)
             {
             case START:
                 if(byte == FLAG){

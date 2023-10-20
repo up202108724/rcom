@@ -318,6 +318,7 @@ int llread(unsigned char *buf){
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
+    unsigned char special;
     
     LinkLayerState state = START;
     while (state!= STOP){
@@ -366,6 +367,7 @@ int llread(unsigned char *buf){
                 }
                 break;
             case BCC1:
+                special=byte;
                 state= READING_DATA;
                 break;
             case READING_DATA:
@@ -373,14 +375,24 @@ int llread(unsigned char *buf){
                 if (byte== FLAG){
                     
                     unsigned char bcc2 = buf[data_byte_counter-1];
+                    unsigned char accumulator=0;
                     data_byte_counter--;
                     buf[data_byte_counter]='\0';
+                    for(int i =0; i <=data_byte_counter; i++){
+                        printf("Buffer element: %x \n", buf[i]);
+                        accumulator=(accumulator ^ buf[i]);
+                    }
+                    accumulator=(accumulator^special);
+                    /*
                     unsigned acumulator = buf[0];
                     for (int j=1;j < data_byte_counter ;j++){
                         acumulator^=buf[j];
                     }
-
-                    if(bcc2==acumulator){
+                    */
+                    printf("Start Buffer %x \n", buf[0]);
+                    printf("BCC2 :%x \n", bcc2);
+                    printf("Acumulator: %x \n", accumulator);
+                    if(bcc2==accumulator){
                         printf("Sending RR\n");
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
@@ -391,24 +403,25 @@ int llread(unsigned char *buf){
                     
                     else{
                         printf("Sending REJ\n");
+                        printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         return -1;
                     }
 
                 }
                 else{
-                    printf("Incrementing counter");
+                   
                     buf[data_byte_counter++]= byte;
                 }
                 break;
             case DATA_RECEIVED_ESC:
                 state= READING_DATA;
                 if(byte == 0X5E){
-                    printf("Incrementing counter");
+                   
                     buf[data_byte_counter++]= FLAG;
                 }
                 if(byte == 0x5D){
-                    printf("Incrementing counter");
+                    
                     buf[data_byte_counter++]= ESC;
                     
                 }

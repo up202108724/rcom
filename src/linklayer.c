@@ -293,7 +293,8 @@ int llwrite(unsigned char *buf, int bufSize){
     printf("frameSize: %d\n", frameSize);
     free(frame);
     if(accept==1){
-        return frameSize;
+        
+        return bufSize;
     }
     else{
         llclose();
@@ -338,7 +339,7 @@ int llread(unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(A_FRECEIVER, C_DISC);
+                    sendSupervisionFrame(A_FSENDER, C_DISC);
                     return 0;
                 }
                 else { state=START;}
@@ -369,13 +370,13 @@ int llread(unsigned char *buf){
 
                     if(bcc2==acumulator){
                         state=STOP;
-                        sendSupervisionFrame(A_FRECEIVER, C_RR(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         return data_byte_counter;
                     }
                     
                     else{
-                        sendSupervisionFrame(A_FRECEIVER, C_REJ(info_frame_number_receiver));
+                        sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         data_byte_counter=0;
                         state= START;
                     }
@@ -514,7 +515,7 @@ unsigned char readControlByte(){
                 break;
             
             case FLAG_RCV:
-                if(byte == A_FRECEIVER){
+                if(byte == A_FSENDER){
                     state_ = A_RCV;
                 }
                 else if(byte != FLAG){
@@ -534,7 +535,7 @@ unsigned char readControlByte(){
                 }
                 break;
             case C_RCV:
-                if(byte == (A_FRECEIVER ^ control_byte)){
+                if(byte == (A_FSENDER ^ control_byte)){
                     state_ = BCC1;
                 }
                 else if(byte != FLAG){
@@ -552,8 +553,6 @@ unsigned char readControlByte(){
                     state_ = START;
                 }
                 break;
-            case STOP:
-                 return control_byte;
             default:
                 break;
             }

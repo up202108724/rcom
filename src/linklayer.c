@@ -318,7 +318,7 @@ int llread(unsigned char *buf){
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
-    unsigned char special;
+    //unsigned char special;
     
     LinkLayerState state = START;
     while (state!= STOP){
@@ -367,8 +367,9 @@ int llread(unsigned char *buf){
                 }
                 break;
             case BCC1:
-                special=byte;
-                state= READING_DATA;
+                if(byte== ESC){state=DATA_RECEIVED_ESC;}
+                else{state= READING_DATA; buf[0]=byte; data_byte_counter++;}
+
                 break;
             case READING_DATA:
                 if (byte== ESC){ state= DATA_RECEIVED_ESC;}
@@ -382,7 +383,7 @@ int llread(unsigned char *buf){
                         printf("Buffer element: %x \n", buf[i]);
                         accumulator=(accumulator ^ buf[i]);
                     }
-                    accumulator=(accumulator^special);
+                    //accumulator=(accumulator^special);
                     /*
                     unsigned acumulator = buf[0];
                     for (int j=1;j < data_byte_counter ;j++){

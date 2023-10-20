@@ -372,7 +372,7 @@ int llread(unsigned char *buf){
                     data_byte_counter--;
                     buf[data_byte_counter]='\0';
                     unsigned acumulator = buf[0];
-                    for (int j=0;j < data_byte_counter ;j++){
+                    for (int j=1;j < data_byte_counter ;j++){
                         acumulator^=buf[j];
                     }
 
@@ -381,14 +381,14 @@ int llread(unsigned char *buf){
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
+                        printf("data_byte_counter: %d\n", data_byte_counter);
                         return data_byte_counter;
                     }
                     
                     else{
                         printf("Sending REJ\n");
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
-                        data_byte_counter=0;
-                        state= START;
+                        return -1;
                     }
 
                 }
@@ -502,7 +502,7 @@ int llclose(){
             }
             
         }
-        return -1;
+        return 0;
     }
 
 

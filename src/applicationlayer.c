@@ -154,10 +154,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         } else{printf("two");}
         printf("Good opening");
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
-        if(llread(buffer) == -1) {
-            printf("Error receiving information.\n");
-            return;
-        }
+        int packetSize = -1;
+        while ((packetSize = llread(buffer)) < 0);
         printf("-------------------------------------------------Received First Packet\n");
 
         //--------------------

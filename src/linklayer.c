@@ -339,7 +339,7 @@ int llread(unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(A_FRECEIVER, C_DISC);
+                    sendSupervisionFrame(A_FSENDER, C_DISC);
                     return 0;
                 }
                 else { state=START;}

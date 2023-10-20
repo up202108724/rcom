@@ -260,6 +260,9 @@ int llwrite(unsigned char *buf, int bufSize){
     int reject = 0;
     int accept = 0;
     printf("AlarmEnabled: %d\n", alarmEnabled);
+    for(int i=0;i<frameSize/2;i++){
+        printf("frame[%d]: %x\n", i, frame[i]);
+    }
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -270,11 +273,16 @@ int llwrite(unsigned char *buf, int bufSize){
         alarmEnabled=TRUE;
         }
       
+      
         while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
-            write(fd, frame, frameSize);
+            
+            if(write(fd, frame, frameSize) == -1){
+                printf("Error writing.\n");
+            }
+            
             unsigned char result = readControlByte();
-            //printf("Result: %x\n", result);
+            printf("Result: %x\n", result);
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
                 reject=1;
@@ -339,14 +347,14 @@ int llread(unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(A_FSENDER, C_DISC);
+                    sendSupervisionFrame(A_FRECEIVER, C_DISC);
                     return 0;
                 }
                 else { state=START;}
                 
                 break;
             case C_RCV:                 
-                if (byte== (A_RCV ^ control_field) ){
+                if (byte== (A_FSENDER ^ control_field) ){
                     state= BCC1;
                 }
                 if(byte== FLAG){
@@ -369,6 +377,7 @@ int llread(unsigned char *buf){
                     }
 
                     if(bcc2==acumulator){
+                        printf("Sending RR\n");
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
@@ -376,6 +385,7 @@ int llread(unsigned char *buf){
                     }
                     
                     else{
+                        printf("Sending REJ\n");
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         data_byte_counter=0;
                         state= START;
@@ -503,6 +513,7 @@ unsigned char readControlByte(){
     LinkLayerState state_ = START;
 
     while (state_ != STOP && alarmEnabled == TRUE){ 
+       
         if(read(fd, &byte, 1) > 0){
             printf("byte: %x\n", byte);
 

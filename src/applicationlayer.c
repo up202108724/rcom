@@ -81,7 +81,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         read(fd, content, size);
 
         long int bytesLeft = size;
-        unsigned char sequence = 0;
 
         
 
@@ -90,14 +89,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             unsigned char* data = (unsigned char*) malloc(dataSize);
             memcpy(data, content, dataSize);
             int packetSize;
-            packetSize = 1 + 1 + 2 + dataSize;
+            packetSize = 1 + 1 + 1 + dataSize;
             unsigned char* packet = (unsigned char*)malloc(packetSize);
             packet[0] = 1;
-            packet[1] = sequence;
-            packet[3] = dataSize & 0xFF;
-            packet[2] = (dataSize >> 8) & 0xFF;
-            memcpy(packet + 4, data, dataSize);
-            printf("packet[10] = %d\n", packet[10]);
+            packet[2] = dataSize & 0xFF;
+            packet[1] = (dataSize >> 8) & 0xFF;
+            memcpy(packet + 3, data, dataSize);
+           
 
 
             if (llwrite(packet, packetSize) == -1) {
@@ -108,7 +106,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             
 
             bytesLeft -= (long int) MAX_PAYLOAD_SIZE; 
-            sequence = (sequence + 1) % 255;
             content += dataSize; 
         }
 

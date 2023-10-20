@@ -18,8 +18,10 @@ void alarmHandler(int signal)
     alarmEnabled = FALSE;
     alarmCount++;
 
+    /*
     printf("Alarm #%d\n", alarmCount);
     fflush(stdout);
+    */
 }
 
 int establish_connection(const char* port, LinkLayer sp_config){
@@ -259,10 +261,12 @@ int llwrite(unsigned char *buf, int bufSize){
     if(j==frameSize){printf("valid size");}
     int reject = 0;
     int accept = 0;
-    printf("AlarmEnabled: %d\n", alarmEnabled);
+    //printf("AlarmEnabled: %d\n", alarmEnabled);
+    /*
     for(int i=0;i<frameSize/2;i++){
         printf("frame[%d]: %x\n", i, frame[i]);
     }
+    */
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -393,19 +397,23 @@ int llread(unsigned char *buf){
 
                 }
                 else{
+                    printf("Incrementing counter");
                     buf[data_byte_counter++]= byte;
                 }
                 break;
             case DATA_RECEIVED_ESC:
                 state= READING_DATA;
                 if(byte == 0X5E){
+                    printf("Incrementing counter");
                     buf[data_byte_counter++]= FLAG;
                 }
                 if(byte == 0x5D){
+                    printf("Incrementing counter");
                     buf[data_byte_counter++]= ESC;
                     
                 }
                 else{
+                    printf("Cleaning counter");
                     data_byte_counter=0;
                     if(byte==FLAG){
                         state=FLAG_RCV;

@@ -18,6 +18,8 @@
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
+    int size_aux=0; // era para ser um unsigned long
+
     if (strcmp(role, "tx") == 0) {
         int fd = open(filename, O_RDONLY);
         if (fd == -1) {
@@ -28,25 +30,25 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         struct stat st;
         stat(filename, &st);
         unsigned long size = (unsigned long) st.st_size;
-        printf("Size: %lu\n", size);
-
-        
         int L1 = ceil( floor(log2(size )+1) / 8);
 	    int L2 = strlen(filename);
-        unsigned long size_aux = 1 + 1 + 1 + L1 + 2 + L2;
+        printf("Size of L1: %d   ", L1);
+        printf("Size of L2: %d   ", L2);
+        size_aux = 1 + 1 + 1 + L1 + 2 + L2;
+        printf("Size of size_aux: %d", size_aux);
         int i = 0;
         unsigned char* control_packet = (unsigned char*) malloc(size_aux);
         control_packet[i++] = C_START;
         control_packet[i++] = 0;
         control_packet[i++] = L1;
-
+        int size_aux_aux= size_aux;
         
 
         
        for (unsigned char j = 0 ; j < L1 ; j++) {
-        control_packet[2+L1-j] = size_aux & 0xFF;
-        size_aux >>= 8;
-    }	
+        control_packet[2+L1-j] = size_aux_aux & 0xFF;
+        size_aux_aux >>= 8;
+        }	
     i += L1;
     control_packet[i++]=1;
     control_packet[i++]=L2;
@@ -69,8 +71,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-       printf("Good opening");
-        if (llwrite(control_packet, size_aux) == -1) {
+        printf("Size of control packet: %d", size_aux);
+        int err= llwrite(control_packet, size_aux);
+        printf("%d",err);
+        if (err ==-1) {
             printf("Error transmitting information.1\n");
             return;
         }
@@ -97,7 +101,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             memcpy(packet + 3, data, dataSize);
            
 
-
+            
             if (llwrite(packet, packetSize) == -1) {
                 printf("Failed transmitting data packet.2\n");
                 return;

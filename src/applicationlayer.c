@@ -120,7 +120,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (result== -1) {
             printf("Error transmitting information.3\n");
             return;
-        }else{result=llclose();}
+        }else{
+            
+            //printf("Before Alarm");
+            result=llclose();}
         free(control_packet);
 
         if (result == -1) {
@@ -157,8 +160,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (llopen(connectionParameters) == -1) {
             printf("Not opening the serial port.\n");
             return;
-        } else{printf("two");}
-        printf("Good opening");
+        } 
+        //else{printf("two");}
+        //printf("Good opening");
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         int packetSize = -1;
         while ((packetSize = llread(buffer)) < 0);
@@ -183,11 +187,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             current_size += buffer[2];
             
             write(fd, buffer + 3, current_size);
+            /*
             printf("-----------------------------------------------------------------------------\n");
             for (int i = 0; i < current_size; i++) {
                 printf("%c", buffer[i + 3]);
             }
             printf("\n-----------------------------------------------------------------------------\n");
+            */
         }
 
         if(buffer[0] != C_END) {
@@ -204,17 +210,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error receiving information(size).\n");
             return;
         }
-        result=llclose();
+        /*
         if(result== -1) {
             printf("Error receiving information(DISC).\n");
             return;
         }
-        if(result==0){
-            printf("Sending DISC 1");
-        }
-
+        */
         free(buffer);
-
+        result=llclose();
         if(result == -1) {
             printf("Error closing connection.\n");
             return;

@@ -19,10 +19,10 @@ void alarmHandler(int signal)
     alarmEnabled = FALSE;
     alarmCount++;
 
-    /*
+    
     printf("Alarm #%d\n", alarmCount);
     fflush(stdout);
-    */
+    
 }
 
 int establish_connection(const char* port, LinkLayer sp_config){
@@ -212,6 +212,7 @@ int llopen(LinkLayer sp_config) {
 
 int llwrite(unsigned char *buf, int bufSize){
     alarmCount=0;
+    alarmEnabled=FALSE;
     printf("Reached llwrite!");
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
@@ -402,6 +403,7 @@ int llread(unsigned char *buf){
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         printf("data_byte_counter: %d\n", data_byte_counter);
+                        alarm(0);
                         return data_byte_counter;
                     }
                     
@@ -452,6 +454,7 @@ return -1;
 
 int llclose(){
     alarmCount=0;
+    alarmEnabled=FALSE;
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
@@ -459,9 +462,8 @@ int llclose(){
     if (role==Transmissor){
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
-            if(waitingforUA==false){
+            
             sendSupervisionFrame(A_FSENDER, C_DISC);
-            }
             alarm(timeout_);
             alarmEnabled=TRUE;
         }
@@ -492,7 +494,7 @@ int llclose(){
                     if(byte==FLAG){
                         state=FLAG_RCV;
                     }
-                    if (byte==C_DISC){ state= C_RCV; break;}
+                    if (byte==C_DISC){ state= C_RCV; alarm(0);break;}
                     else{
                         state=START;
                     }
@@ -523,6 +525,7 @@ int llclose(){
                     }
                 case STOP:
                       printf("Last UA");
+                      //alarm(0);
                       sendSupervisionFrame(A_FSENDER,C_UA);
                       if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {

@@ -16,6 +16,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 {
     int size_aux=0; // era para ser um unsigned long
     int result;
+    int showStatistics;
+
     if (strcmp(role, "tx") == 0) {
         int fd = open(filename, O_RDONLY);
         if (fd == -1) {
@@ -119,7 +121,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }else{
             
             //printf("Before Alarm");
-            result=llclose();}
+            result=llclose(showStatistics);}
         free(control_packet);
 
         if (result == -1) {
@@ -213,7 +215,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         */
         free(buffer);
-        result=llclose();
+        result=llclose(showStatistics);
         if(result == -1) {
             printf("Error closing connection.\n");
             return;

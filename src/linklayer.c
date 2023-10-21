@@ -94,6 +94,8 @@ int llopen(LinkLayer sp_config) {
             }
             while (alarmEnabled == TRUE && state != STOP) {
                 if (read(fd, &byte, 1) > 0) {
+                    
+                    
                     switch (state) {
                         case START:
                             if (byte == FLAG) {
@@ -452,7 +454,7 @@ int llread(unsigned char *buf){
 return -1;
 }
 
-int llclose(){
+int llclose(int showStatistics){
     alarmCount=0;
     alarmEnabled=FALSE;
     LinkLayerState state= START;
@@ -557,6 +559,9 @@ int llclose(){
             if(byte==-1){return -1;}
             if(byte==C_UA){
                 printf("Finishing Program!!!!");
+                if(showStatistics==1){
+                    ShowStatistics();
+                }
                 return 0;
             }
             
@@ -714,5 +719,7 @@ unsigned char readresponseByte(bool waitingforUA){
 
 }
 
-
+void ShowStatistics(){
+    printf("Olá!");
+}
 

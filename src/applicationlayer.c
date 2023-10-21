@@ -11,10 +11,6 @@
 #include "applicationlayer.h"
 #include "DataLink.h"
 
-#define C_DATA 1
-#define C_START 2
-#define C_END 3
-
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {

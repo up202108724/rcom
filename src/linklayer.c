@@ -323,7 +323,7 @@ int llread(unsigned char *buf){
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
-        //printf("Byte: %x\n",byte);
+        printf("Byte: %x\n",byte);
         switch (state){
             
             case START:
@@ -372,7 +372,7 @@ int llread(unsigned char *buf){
 
                 break;
             case READING_DATA:
-                if (byte== ESC){ state= DATA_RECEIVED_ESC;}
+                if (byte== ESC){ state= DATA_RECEIVED_ESC; break;}
                 if (byte== FLAG){
                     
                     unsigned char bcc2 = buf[data_byte_counter-1];
@@ -380,7 +380,7 @@ int llread(unsigned char *buf){
                     data_byte_counter--;
                     buf[data_byte_counter]='\0';
                     for(int i =0; i <=data_byte_counter; i++){
-                        printf("Buffer element: %x \n", buf[i]);
+                        //printf("Buffer element: %x \n", buf[i]);
                         accumulator=(accumulator ^ buf[i]);
                     }
                     //accumulator=(accumulator^special);
@@ -390,9 +390,9 @@ int llread(unsigned char *buf){
                         acumulator^=buf[j];
                     }
                     */
-                    printf("Start Buffer %x \n", buf[0]);
-                    printf("BCC2 :%x \n", bcc2);
-                    printf("Acumulator: %x \n", accumulator);
+                    //printf("Start Buffer %x \n", buf[0]);
+                    //printf("BCC2 :%x \n", bcc2);
+                    //printf("Acumulator: %x \n", accumulator);
                     if(bcc2==accumulator){
                         printf("Sending RR\n");
                         state=STOP;
@@ -426,6 +426,7 @@ int llread(unsigned char *buf){
                     buf[data_byte_counter++]= ESC;
                     
                 }
+                /*
                 else{
                     printf("Cleaning counter");
                     data_byte_counter=0;
@@ -436,6 +437,7 @@ int llread(unsigned char *buf){
                         state=START;
                     }
                 }
+                */
             break;
             case STOP:
                 break;               

@@ -310,7 +310,6 @@ int llwrite(unsigned char *buf, int bufSize){
         return bufSize;
     }
     else{
-        llclose();
         return -1;
     }
 }
@@ -324,7 +323,7 @@ int llread(unsigned char *buf){
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
-        printf("Byte: %x\n",byte);
+        //printf("Byte: %x\n",byte);
         switch (state){
             
             case START:
@@ -368,7 +367,8 @@ int llread(unsigned char *buf){
                 }
                 break;
             case BCC1:
-                if(control_field==0x0B){llclose(); return 0;}
+                if(control_field==0x0B){
+                    return 0;}
                 if(byte== ESC){state=DATA_RECEIVED_ESC;}
                 else{state= READING_DATA; buf[0]=byte; data_byte_counter++;}
 
@@ -472,28 +472,33 @@ int llclose(){
                     }
                     break;
                 case FLAG_RCV:
+                    printf("Byte Address :%x ",byte);
                     if(byte==A_FRECEIVER){
                         state=A_RCV;
-                    }
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
+                        break;
                     } 
+                    if(byte==FLAG){
+                        state=FLAG_RCV; 
+                    }
                     else{
                         state=START;
                     }
                     break;
                 case A_RCV:
-                    if (byte==C_DISC){ state= C_RCV;}
+                    printf("Byte CONTROL:%x ",byte);
                     if(byte==FLAG){
                         state=FLAG_RCV;
                     }
+                    if (byte==C_DISC){ state= C_RCV; break;}
                     else{
                         state=START;
                     }
                 break;
                 case C_RCV:
+                    printf("Byte BCC:%x ",byte);
                     if (byte==(C_DISC^A_FRECEIVER)){
                         state= BCC1;
+                        break;
                     }
                     if(byte==FLAG){
                         state=FLAG_RCV;
@@ -503,16 +508,19 @@ int llclose(){
                     }
                     break;
                 case BCC1:
+                    printf("Byte FLAG:%x ",byte);
                     if(byte==FLAG){
+                        printf("Falling");
                         state=STOP;
+                        
                     }
                     else{
                         state=START;
+                        break;
                     }
-                    break;
                 case STOP:
-                      sendSupervisionFrame(A_FSENDER,C_UA);
                       printf("Last UA");
+                      sendSupervisionFrame(A_FSENDER,C_UA);
                       if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");
@@ -531,7 +539,8 @@ int llclose(){
             
         }
     }
-    if (role==Receptor){
+    else if (role==Receptor){
+            printf("Sending DISC");
             sendSupervisionFrame(A_FRECEIVER,C_DISC);
             return 0;
             
@@ -550,7 +559,7 @@ unsigned char readControlByte(){
     while (state_ != STOP && alarmEnabled == TRUE){ 
        
         if(read(fd, &byte, 1) > 0){
-            printf("byte: %x\n", byte);
+            //printf("byte: %x\n", byte);
 
             switch (state_)
             {

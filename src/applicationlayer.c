@@ -19,7 +19,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
     int size_aux=0; // era para ser um unsigned long
-
+    int result;
     if (strcmp(role, "tx") == 0) {
         int fd = open(filename, O_RDONLY);
         if (fd == -1) {
@@ -116,13 +116,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         printf("Good llwrite2\n");
 
         control_packet[0] = C_END;
-        if (llwrite(control_packet, size_aux) == -1) {
+        result=llwrite(control_packet, size_aux); 
+        if (result== -1) {
             printf("Error transmitting information.3\n");
             return;
-        }
+        }else{result=llclose();}
         free(control_packet);
 
-        if (llclose() == -1) {
+        if (result == -1) {
             printf("Error closing connection.\n");
             return;
         }
@@ -131,6 +132,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     } else if (strcmp(role, "rx") == 0) {
         int fd;
+        
         int fd_temp = open(filename, O_WRONLY | O_TRUNC);
         if(fd_temp == -1)
             fd = open(filename, O_APPEND | O_CREAT | O_WRONLY);
@@ -202,18 +204,23 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error receiving information(size).\n");
             return;
         }
-
-        if(llread(buffer) == -1) {
+        result=llread(buffer);
+        if(result== -1) {
             printf("Error receiving information(DISC).\n");
             return;
+        }
+        if(result==0){
+            printf("Sending DISC 1");
+            result=llclose();   
         }
 
         free(buffer);
 
-        if(llclose(0) == -1) {
+        if(result == -1) {
             printf("Error closing connection.\n");
             return;
         }
         close(fd);
+        return;
     }
 }

@@ -204,14 +204,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error receiving information(size).\n");
             return;
         }
-        result=llread(buffer);
+        result=llclose();
         if(result== -1) {
             printf("Error receiving information(DISC).\n");
             return;
         }
         if(result==0){
             printf("Sending DISC 1");
-            result=llclose();   
         }
 
         free(buffer);

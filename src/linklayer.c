@@ -12,7 +12,7 @@ unsigned timeout_=0;
 unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
-
+Role role;
 void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
@@ -82,6 +82,7 @@ int llopen(LinkLayer sp_config) {
     }
     attempts = sp_config.numTransmissions;
     timeout_ = sp_config.timeout;
+    role= sp_config.role;
     unsigned char byte;
     if (sp_config.role == Transmissor) {
         while ((alarmCount < attempts) && state != STOP) {
@@ -352,8 +353,8 @@ int llread(unsigned char *buf){
                 //trama de supervisão
                 
                 else if (byte== 0x0B){
-                    sendSupervisionFrame(A_FRECEIVER, C_DISC);
-                    return 0;
+                    control_field=byte;
+                    state=C_RCV;
                 }
                 else { state=START;}
                 
@@ -367,6 +368,7 @@ int llread(unsigned char *buf){
                 }
                 break;
             case BCC1:
+                if(control_field==0x0B){llclose(); return 0;}
                 if(byte== ESC){state=DATA_RECEIVED_ESC;}
                 else{state= READING_DATA; buf[0]=byte; data_byte_counter++;}
 
@@ -453,6 +455,7 @@ int llclose(){
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
     printf("Reached llclose!");
+    if (role==Transmissor){
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
             sendSupervisionFrame(A_FSENDER, C_DISC);
@@ -480,7 +483,7 @@ int llclose(){
                     }
                     break;
                 case A_RCV:
-                    if (byte==C_UA){ state= C_RCV;}
+                    if (byte==C_DISC){ state= C_RCV;}
                     if(byte==FLAG){
                         state=FLAG_RCV;
                     }
@@ -489,7 +492,7 @@ int llclose(){
                     }
                 break;
                 case C_RCV:
-                    if (byte==(C_UA^A_FRECEIVER)){
+                    if (byte==(C_DISC^A_FRECEIVER)){
                         state= BCC1;
                     }
                     if(byte==FLAG){
@@ -508,7 +511,8 @@ int llclose(){
                     }
                     break;
                 case STOP:
-                      sendSupervisionFrame(A_FRECEIVER,C_UA);
+                      sendSupervisionFrame(A_FSENDER,C_UA);
+                      printf("Last UA");
                       if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");
@@ -526,6 +530,13 @@ int llclose(){
             }
             
         }
+    }
+    if (role==Receptor){
+            sendSupervisionFrame(A_FRECEIVER,C_DISC);
+            return 0;
+            
+        }
+        // sendSupervisionFrame(A_FRECEIVER,C_DISC);
         return 0;
     }
 

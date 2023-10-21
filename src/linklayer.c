@@ -1,5 +1,5 @@
 #include "DataLink.h"
-
+#include <stdbool.h>
 LinkLayerState state = START;
 
 volatile int alarmEnabled = FALSE;
@@ -13,6 +13,7 @@ unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
+bool waitingforUA=false;
 void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
@@ -540,15 +541,162 @@ int llclose(){
         }
     }
     else if (role==Receptor){
-            printf("Sending DISC");
-            sendSupervisionFrame(A_FRECEIVER,C_DISC);
-            return 0;
+        while(1){
+        if(waitingforUA==false){
+        while(state != STOP ){
+       
+               if(read(fd ,&byte, 1)>0){
+                switch (state)
+                {
+                case START:
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    break;
+                case FLAG_RCV:
+                    printf("Byte Address :%x ",byte);
+                    if(byte==A_FSENDER){
+                        state=A_RCV;
+                        break;
+                    } 
+                    if(byte==FLAG){
+                        state=FLAG_RCV; 
+                    }
+                    else{
+                        state=START;
+                    }
+                    break;
+                case A_RCV:
+                    printf("Byte CONTROL:%x ",byte);
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    if (byte==C_DISC){ state= C_RCV; break;}
+                    else{
+                        state=START;
+                    }
+                break;
+                case C_RCV:
+                    printf("Byte BCC:%x ",byte);
+                    if (byte==(C_DISC^A_FSENDER)){
+                        state= BCC1;
+                        break;
+                    }
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    else{
+                        state=START;
+                    }
+                    break;
+                case BCC1:
+                    printf("Byte FLAG:%x ",byte);
+                    if(byte==FLAG){
+                        printf("Falling");
+                        state=STOP;
+                        
+                    }
+                    else{
+                        state=START;
+                        break;
+                    }
+                case STOP:
+                     
+                printf("Sending DISC");
+                if(sendSupervisionFrame(A_FRECEIVER,C_DISC)==-1){return -1;}
+                waitingforUA=true;
+                     break;
+                default:
+                    break;
+                }
+                
+
+            }
+            
             
         }
-        // sendSupervisionFrame(A_FRECEIVER,C_DISC);
-        return 0;
-    }
+            
+           
+        }
+        if(waitingforUA==true){
+        state=START;
+        while(state != STOP ){
+       
+               if(read(fd ,&byte, 1)>0){
+                switch (state)
+                {
+                case START:
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    break;
+                case FLAG_RCV:
+                    printf("Byte Address :%x ",byte);
+                    if(byte==A_FSENDER){
+                        state=A_RCV;
+                        break;
+                    } 
+                    if(byte==FLAG){
+                        state=FLAG_RCV; 
+                    }
+                    else{
+                        state=START;
+                    }
+                    break;
+                case A_RCV:
+                    printf("Byte CONTROL:%x ",byte);
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    if (byte==C_UA){ state= C_RCV; break;}
+                    else{
+                        state=START;
+                    }
+                break;
+                case C_RCV:
+                    printf("Byte BCC:%x ",byte);
+                    if (byte==(C_UA^A_FSENDER)){
+                        state= BCC1;
+                        break;
+                    }
+                    if(byte==FLAG){
+                        state=FLAG_RCV;
+                    }
+                    else{
+                        state=START;
+                    }
+                    break;
+                case BCC1:
+                    printf("Byte FLAG:%x ",byte);
+                    if(byte==FLAG){
+                        printf("Falling");
+                        state=STOP;
+                        
+                    }
+                    else{
+                        state=START;
+                        break;
+                    }
+                case STOP:
+                     printf("Received UA");
+                     return 0;
+                     break;
+                default:
+                    break;
+                }
+                
 
+            }
+            
+            
+        }    
+        }
+        }
+        // sendSupervisionFrame(A_FRECEIVER,C_DISC);
+        return -1;
+    }
+    return -1;
+}
 
 unsigned char readControlByte(){
 
@@ -579,7 +727,7 @@ unsigned char readControlByte(){
                 break;
 
             case A_RCV:
-                if(byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1) || byte == C_DISC){
+                if(byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1)){
                     state_ = C_RCV;
                     control_byte = byte;
 

@@ -13,7 +13,7 @@
 #include <time.h>
 #include <stdbool.h>
 
-#define BAUDRATE 38400
+
 #define BUF_SIZE 256
 #define FALSE 0
 #define TRUE 1

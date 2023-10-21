@@ -1,5 +1,5 @@
 #include "DataLink.h"
-#include <stdbool.h>
+
 LinkLayerState state = START;
 
 volatile int alarmEnabled = FALSE;
@@ -459,7 +459,9 @@ int llclose(){
     if (role==Transmissor){
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
+            if(waitingforUA==false){
             sendSupervisionFrame(A_FSENDER, C_DISC);
+            }
             alarm(timeout_);
             alarmEnabled=TRUE;
         }
@@ -542,158 +544,22 @@ int llclose(){
     }
     else if (role==Receptor){
         while(1){
-        if(waitingforUA==false){
-        while(state != STOP ){
-       
-               if(read(fd ,&byte, 1)>0){
-                switch (state)
-                {
-                case START:
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    break;
-                case FLAG_RCV:
-                    printf("Byte Address :%x ",byte);
-                    if(byte==A_FSENDER){
-                        state=A_RCV;
-                        break;
-                    } 
-                    if(byte==FLAG){
-                        state=FLAG_RCV; 
-                    }
-                    else{
-                        state=START;
-                    }
-                    break;
-                case A_RCV:
-                    printf("Byte CONTROL:%x ",byte);
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    if (byte==C_DISC){ state= C_RCV; break;}
-                    else{
-                        state=START;
-                    }
-                break;
-                case C_RCV:
-                    printf("Byte BCC:%x ",byte);
-                    if (byte==(C_DISC^A_FSENDER)){
-                        state= BCC1;
-                        break;
-                    }
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    else{
-                        state=START;
-                    }
-                    break;
-                case BCC1:
-                    printf("Byte FLAG:%x ",byte);
-                    if(byte==FLAG){
-                        printf("Falling");
-                        state=STOP;
-                        
-                    }
-                    else{
-                        state=START;
-                        break;
-                    }
-                case STOP:
-                     
-                printf("Sending DISC");
-                if(sendSupervisionFrame(A_FRECEIVER,C_DISC)==-1){return -1;}
-                waitingforUA=true;
-                     break;
-                default:
-                    break;
-                }
-                
-
+            if(waitingforUA==false){
+            byte=readresponseByte(waitingforUA);
+            if(byte==C_DISC){waitingforUA=true;}
             }
-            
-            
-        }
-            
-           
-        }
+        
         if(waitingforUA==true){
-        state=START;
-        while(state != STOP ){
-       
-               if(read(fd ,&byte, 1)>0){
-                switch (state)
-                {
-                case START:
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    break;
-                case FLAG_RCV:
-                    printf("Byte Address :%x ",byte);
-                    if(byte==A_FSENDER){
-                        state=A_RCV;
-                        break;
-                    } 
-                    if(byte==FLAG){
-                        state=FLAG_RCV; 
-                    }
-                    else{
-                        state=START;
-                    }
-                    break;
-                case A_RCV:
-                    printf("Byte CONTROL:%x ",byte);
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    if (byte==C_UA){ state= C_RCV; break;}
-                    else{
-                        state=START;
-                    }
-                break;
-                case C_RCV:
-                    printf("Byte BCC:%x ",byte);
-                    if (byte==(C_UA^A_FSENDER)){
-                        state= BCC1;
-                        break;
-                    }
-                    if(byte==FLAG){
-                        state=FLAG_RCV;
-                    }
-                    else{
-                        state=START;
-                    }
-                    break;
-                case BCC1:
-                    printf("Byte FLAG:%x ",byte);
-                    if(byte==FLAG){
-                        printf("Falling");
-                        state=STOP;
-                        
-                    }
-                    else{
-                        state=START;
-                        break;
-                    }
-                case STOP:
-                     printf("Received UA");
-                     return 0;
-                     break;
-                default:
-                    break;
-                }
-                
-
+            byte=readresponseByte(waitingforUA);
+            if(byte==-1){return -1;}
+            if(byte==C_UA){
+                printf("Finishing Program!!!!");
+                return 0;
             }
             
-            
-        }    
         }
         }
         // sendSupervisionFrame(A_FRECEIVER,C_DISC);
-        return -1;
     }
     return -1;
 }
@@ -704,7 +570,7 @@ unsigned char readControlByte(){
     unsigned char control_byte = 0;
     LinkLayerState state_ = START;
 
-    while (state_ != STOP && alarmEnabled == TRUE){ 
+    while (state_ != STOP && (alarmEnabled == TRUE|| role==Receptor)){ 
        
         if(read(fd, &byte, 1) > 0){
             //printf("byte: %x\n", byte);
@@ -730,7 +596,6 @@ unsigned char readControlByte(){
                 if(byte == C_RR(0) || byte == C_RR(1) || byte == C_REJ(0) || byte == C_REJ(1)){
                     state_ = C_RCV;
                     control_byte = byte;
-
                 }
                 else if (byte != FLAG) state_ = START;
                 else{
@@ -764,6 +629,84 @@ unsigned char readControlByte(){
         }
     }
 
+    return control_byte;
+
+}
+unsigned char readresponseByte(bool waitingforUA){
+
+    unsigned char byte = 0;
+    unsigned char control_byte = 0;
+    LinkLayerState state_ = START;
+
+    while (state_ != STOP){ 
+       
+        if(read(fd, &byte, 1) > 0){
+            //printf("byte: %x\n", byte);
+
+            switch (state_)
+            {
+            case START:
+                if(byte == FLAG){
+                    state_ = FLAG_RCV;
+                }
+                break;
+            
+            case FLAG_RCV:
+                if(byte == A_FSENDER){
+                    state_ = A_RCV;
+                }
+                else if(byte != FLAG){
+                    state_ = START;
+                }
+                break;
+
+            case A_RCV:
+                if(byte ==C_UA ||byte==C_DISC ){
+                    state_ = C_RCV;
+                    control_byte = byte;
+                    if(byte==C_UA){
+                    printf("    UA    ");
+                    } 
+                    if(byte==C_DISC){
+                        printf(" DISC");
+                    }
+                }
+                else if (byte != FLAG) state_ = START;
+                else{
+                    state_ = FLAG_RCV;
+                }
+                break;
+            case C_RCV:
+                if(byte == (A_FSENDER ^ control_byte)){
+                    state_ = BCC1;
+                }
+                else if(byte != FLAG){
+                    state_ = START;
+                }
+                else{
+                    state_ = FLAG_RCV;
+                }
+                break;
+            case BCC1:
+                if(byte == FLAG){
+                    state_ = STOP;
+                }
+                else{
+                    state_ = START;
+                }
+                break;
+            default:
+                break;
+            }
+
+
+        }
+    }
+    if(waitingforUA==false){
+        
+        if(sendSupervisionFrame(A_FRECEIVER,C_DISC)==-1){return -1;}
+        
+        }
     return control_byte;
 
 }

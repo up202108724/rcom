@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <stdbool.h>
 
 #define BAUDRATE 38400
 #define BUF_SIZE 256
@@ -83,7 +84,7 @@ void alarmHandler(int signal);
 
 unsigned char readControlByte();
 
-
+unsigned char readresponseByte(bool waitingforUA);
 
 
 

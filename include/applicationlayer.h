@@ -9,5 +9,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       
 #define DATA_PACKET 2
 #define END_PACKET 3
+#define C_DATA 1
+#define C_START 2
+#define C_END 3
 
 #endif

@@ -16,7 +16,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 {
     int size_aux=0; // era para ser um unsigned long
     int result;
-    int showStatistics;
+    int showStatistics=TRUE;
+    
 
     if (strcmp(role, "tx") == 0) {
         int fd = open(filename, O_RDONLY);

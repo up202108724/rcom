@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
-
+#include <time.h>
 
 #define BUF_SIZE 256
 #define FALSE 0
@@ -88,5 +88,6 @@ unsigned char readresponseByte(bool waitingforUA);
 
 void ShowStatistics();
 
-
+void simulateBitErrors(unsigned char *frame, int frameSize, double errorRate);
+ 
 #endif

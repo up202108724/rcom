@@ -13,6 +13,8 @@ unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
+clock_t start,end;
+double cpu_time_used;
 bool waitingforUA=false;
 void alarmHandler(int signal)
 {
@@ -76,6 +78,9 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 
 int llopen(LinkLayer sp_config) {
     //alarmCount = 0;
+    clock_t start, end;
+    double cpu_time_used;
+    start = clock();
     (void) signal(SIGALRM, alarmHandler);
     int check_connection = establish_connection(sp_config.serialPort, sp_config);
     if (check_connection < 0) {
@@ -272,6 +277,7 @@ int llwrite(unsigned char *buf, int bufSize){
         printf("frame[%d]: %x\n", i, frame[i]);
     }
     */
+    //simulateBitErrors(frame,frameSize, 20);
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -328,6 +334,7 @@ int llread(unsigned char *buf){
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
+        
         switch (state){
             
             case START:
@@ -559,6 +566,7 @@ int llclose(int showStatistics){
             if(byte==-1){return -1;}
             if(byte==C_UA){
                 printf("Finishing Program!!!!");
+                end=clock();
                 if(showStatistics==1){
                     ShowStatistics();
                 }
@@ -720,6 +728,17 @@ unsigned char readresponseByte(bool waitingforUA){
 }
 
 void ShowStatistics(){
-    printf("Olá!");
+    cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
+    printf("Time elapsed: %f\n", cpu_time_used);
 }
+void simulateBitErrors(unsigned char *frame, int frameSize, double errorRate) {
+    srand(time(NULL));
 
+    for (int i = 0; i < frameSize; i++) {
+        double randomValue = (double)rand() / RAND_MAX;
+        if (randomValue < errorRate) {
+            // Flip a random bit by XORing with 1
+            frame[i] ^= 0x01;
+        }
+    }
+}

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+
 
 #include "applicationlayer.h"
 
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    clock_t start, end;
+    
     double cpu_time_used;
 
     const char *serialPort = argv[1];
@@ -44,10 +44,9 @@ int main(int argc, char *argv[])
            TIMEOUT,
            filename);
 
-    start = clock();
     applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename);
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    
+   
     printf("Time elapsed: %f\n", cpu_time_used);
 
     return 0;

@@ -18,9 +18,10 @@
 #define FALSE 0
 #define TRUE 1
 #define MAX_PAYLOAD_SIZE 1000
-#define BER 0.000001
-#define BIT_FLIPPING 0
-#define SHOW_STATISTICS 0
+#define BER_DATAFIELD 0.000001
+#define BER_HEADERFIELD 0.00001
+#define BIT_FLIPPING 1
+#define SHOW_STATISTICS 1
 
 
 #define FLAG 0x7E

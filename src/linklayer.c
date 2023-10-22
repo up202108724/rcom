@@ -6,10 +6,13 @@ volatile int alarmEnabled = FALSE;
 volatile int alarmCount = 0;
 int fd=0;
 unsigned attempts= 0;
+unsigned total_error_frames=0;
+unsigned total_frames_received=0;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
 unsigned timeout_=0;
 unsigned baudrate=0;
+double fer=0.0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
@@ -17,6 +20,7 @@ clock_t start,end;
 double cpu_time_used;
 extern double t_prop;
 bool waitingforUA=false;
+bool lastbyte=false;
 void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
@@ -331,14 +335,20 @@ int llread(unsigned char *buf){
     char control_field;
     int data_byte_counter=0;
     //unsigned char special;
-    
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
-        
-        if(BIT_FLIPPING && state==BCC1){
-        byte = simulateBitError(byte, BER);
+        if(BIT_FLIPPING){
+        if(!(state==BCC1 || state== READING_DATA || state==DATA_RECEIVED_ESC)){
+        byte = simulateBitError(byte, BER_HEADERFIELD);
+        }else if (state==READING_DATA && byte==FLAG)
+        {
+            byte = simulateBitError(byte, BER_HEADERFIELD);
+        }
+        else{
+            byte = simulateBitError(byte, BER_DATAFIELD);
+        }
         }
         switch (state){
             
@@ -352,6 +362,8 @@ int llread(unsigned char *buf){
                     state = A_RCV;
                 }else if(byte== FLAG){
                     state= FLAG_RCV;
+                    total_error_frames++;
+                    //total_error_frames_on_it++;
                 }
                 else  { state= START;}
                 break;
@@ -359,19 +371,24 @@ int llread(unsigned char *buf){
             case A_RCV:
                 if(byte== FLAG){
                     state= FLAG_RCV;
+                    total_error_frames++;
+                    //total_error_frames_on_it++;
                 }
                 //trama de informação
                 else if(byte== 0x00 || byte == 0x40) {
                     state= C_RCV;
                     control_field= byte;
+                    
                 }
                 //trama de supervisão
-                
+                /*
                 else if (byte== 0x0B){
                     control_field=byte;
                     state=C_RCV;
+                    total_error_frames-=total_error_frames_on_it;
                 }
-                else { state=START;}
+                */
+                else { state=START; total_error_frames++;}
                 
                 break;
             case C_RCV:                 
@@ -380,7 +397,9 @@ int llread(unsigned char *buf){
                 }
                 if(byte== FLAG){
                     state= FLAG_RCV;
+                    total_error_frames++;
                 }
+                else{state=START; total_error_frames++;}
                 break;
             case BCC1:
                 if(control_field==0x0B){
@@ -418,6 +437,7 @@ int llread(unsigned char *buf){
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         printf("data_byte_counter: %d\n", data_byte_counter);
                         alarm(0);
+                        total_frames_received++;
                         return data_byte_counter;
                     }
                     
@@ -426,6 +446,8 @@ int llread(unsigned char *buf){
                         printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         return -1;
+                        total_error_frames++;
+                        total_frames_received++;
                     }
 
                 }
@@ -744,9 +766,10 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
     printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
-    /*
+    fer= total_error_frames/total_frames_received;
+    
     if(BIT_FLIPPING){
-        double fer = 1-pow((double)(1-BER),(double)MAX_PAYLOAD_SIZE);
+        //sdouble fer = 1-pow((double)(1-BER),(double)MAX_PAYLOAD_SIZE);
         printf("Frame error rate: %f\n", fer);
     }
     
@@ -754,15 +777,13 @@ void ShowStatistics(){
 }
 unsigned char simulateBitError(unsigned char byte, double errorRate) {
     
-    /*
     struct timespec ts;
-    
     clock_gettime(CLOCK_MONOTONIC, &ts);
     srand(ts.tv_nsec);
-    */ 
+     
     double randomError = (double)rand() / RAND_MAX;
     printf("%f",randomError);
-    printf("%f", errorRate);
+    //printf("%f", errorRate);
     if (randomError < errorRate) {
         
         int bitToFlip = rand() % 8;  

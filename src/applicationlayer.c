@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <math.h>
+#include <time.h>
 
 #include "applicationlayer.h"
 #include "DataLink.h"
@@ -176,13 +177,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         int packetSize = -1;
         while ((packetSize = llread(buffer)) < 0);
-        if (firstPacketReceived == 0) {
-                end_=clock(); // Record the end time for the first packet
-                printf("End: %ld\n", end_);
-                printf("Start: %ld\n", start_);
-                t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
-                firstPacketReceived = 1; // Set the flag to indicate the first packet has been received
-            }
+        
+        end_=clock(); // Record the end time for the first packet
+        printf("End: %ld\n", end_);
+        printf("Start: %ld\n", start_);
+        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
+        firstPacketReceived = 1; // Set the flag to indicate the first packet has been received
+         
         printf("-------------------------------------------------Received First Packet\n");
 
         //--------------------

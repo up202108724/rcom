@@ -17,13 +17,11 @@ double t_prop;
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
-    int size_aux=0; // era para ser um unsigned long
+    int size_aux=0; 
     int result;
     int showStatistics=TRUE;
     clock_t start_, end_;
 
-    int firstPacketSent = 0;
-    int firstPacketReceived = 0;
     
 
     if (strcmp(role, "tx") == 0) {
@@ -78,7 +76,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }
         printf("Size of control packet: %d", size_aux);
-        //sleep(10);
+        //sleep(5);
         start_=clock(); // Tempo de processamento
         printf("Start: %ld\n", start_);
         int err= llwrite(control_packet, size_aux);
@@ -87,12 +85,11 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error transmitting information.1\n");
             return;
         }
-        end_=clock(); // Record the end time for the first packet
+        end_=clock(); 
         printf("End: %ld\n", end_);
         printf("Start: %ld\n", start_);
-        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
+        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; 
        
-        //printf("Good llwrite\n");
 
         unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * size);  
         read(fd, content, size);
@@ -127,7 +124,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             content += dataSize; 
         }
 
-        //printf("Good llwrite2\n");
 
         control_packet[0] = C_END;
         result=llwrite(control_packet, size_aux); 
@@ -180,7 +176,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         
 
          
-        printf("-------------------------------------------------Received First Packet\n");
+        printf("---ACCEPTED FIRST PACKET CONTROL-----\n");
 
         //--------------------
         unsigned long size = 0;
@@ -191,7 +187,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         //-------------------
 
         while(1) {
-            //FER=TRUE;
             if(llread(buffer) == -1) {
                 printf("------------------------------------------------------------Continuou\n");
                 continue;
@@ -202,13 +197,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             current_size += buffer[2];
             
             write(fd, buffer + 3, current_size);
-            /*
-            printf("-----------------------------------------------------------------------------\n");
-            for (int i = 0; i < current_size; i++) {
-                printf("%c", buffer[i + 3]);
-            }
-            printf("\n-----------------------------------------------------------------------------\n");
-            */
         }
 
         if(buffer[0] != C_END) {
@@ -222,15 +210,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             new_size += buffer[i + 3];
         }
         if(new_size != size) {
-            printf("Error receiving information(size).\n");
+            printf("Size of packets not coincident.\n");
             return;
         }
-        /*
-        if(result== -1) {
-            printf("Error receiving information(DISC).\n");
-            return;
-        }
-        */
         free(buffer);
         
         result=llclose(SHOW_STATISTICS);

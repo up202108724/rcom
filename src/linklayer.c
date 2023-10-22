@@ -6,13 +6,10 @@ volatile int alarmEnabled = FALSE;
 volatile int alarmCount = 0;
 int fd=0;
 unsigned attempts= 0;
-unsigned total_error_frames=0;
-unsigned total_frames_received=0;
 unsigned char info_frame_number_transmitter=0;
 unsigned char info_frame_number_receiver=1;
 unsigned timeout_=0;
 unsigned baudrate=0;
-double fer=0.0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
@@ -84,8 +81,7 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 }
 
 int llopen(LinkLayer sp_config) {
-    //alarmCount = 0;
-    srand(NULL);
+    srand(time(NULL));
     clock_t start, end;
     clock_t start_bits, end_bits;
     double cpu_time_used;
@@ -280,37 +276,33 @@ int llwrite(unsigned char *buf, int bufSize){
         }
     }
 
-
-    //frame[j++] = BCC2;
     frame[j++] = FLAG;
     int reject = 0;
     int accept = 0;
-    estimateFER(frameSize, BER_HEADERFIELD, BER_DATAFIELD);
-    //printf("AlarmEnabled: %d\n", alarmEnabled);
-    /*
-    for(int i=0;i<frameSize/2;i++){
-        printf("frame[%d]: %x\n", i, frame[i]);
-    }
-    */
-    //simulateBitErrors(frame,frameSize, 20);
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
         
         alarm(timeout_);
         reject=0;
-        accept=0; // só há write quando começa o timeout
+        accept=0; 
         alarmEnabled=TRUE;
+
+            if(write(fd, frame, frameSize) == -1){
+                printf("Error writing.\n");
+            }
+            
         }
       
       
         while (reject==0 && accept==0 && alarmEnabled==TRUE)
         {
-            
+            /*
             if(write(fd, frame, frameSize) == -1){
                 printf("Error writing.\n");
-            }else{ total_frames_received++;}
-            
+            }
+            */
+
             unsigned char result = readControlByte();
             //printf("Result: %x\n", result);
             if(result==0) continue;
@@ -328,7 +320,6 @@ int llwrite(unsigned char *buf, int bufSize){
             break;
         }
     }
-    //printf("frameSize: %d\n", frameSize);
     free(frame);
     if(accept==1){
         
@@ -345,13 +336,11 @@ int llread(unsigned char *buf){
     int data_byte_counter=0;
     clock_t start_bits, end_bits;
     start_bits = clock();
-    //unsigned char special;
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
             bytes_sent++;
-        //printf("Byte: %x\n",byte);
-        
+
         if(BIT_FLIPPING){
         if(!(state==BCC1 || state== READING_DATA || state==DATA_RECEIVED_ESC)){
         byte = simulateBitError(byte, BER_HEADERFIELD);
@@ -376,8 +365,6 @@ int llread(unsigned char *buf){
                     state = A_RCV;
                 }else if(byte== FLAG){
                     state= FLAG_RCV;
-                    //total_error_frames++;
-                    //total_error_frames_on_it++;
                 }
                 else  { state= START;}
                 break;
@@ -385,8 +372,6 @@ int llread(unsigned char *buf){
             case A_RCV:
                 if(byte== FLAG){
                     state= FLAG_RCV;
-                    //total_error_frames++;
-                    //total_error_frames_on_it++;
                 }
                 //trama de informação
                 else if(byte== 0x00 || byte == 0x40) {
@@ -399,10 +384,10 @@ int llread(unsigned char *buf){
                 else if (byte== 0x0B){
                     control_field=byte;
                     state=C_RCV;
-                    //total_error_frames-=total_error_frames_on_it;
+                   
                 }
                 
-                else { state=START; }//total_error_frames++;
+                else { state=START; }
                 
                 break;
             case C_RCV:                 
@@ -412,9 +397,9 @@ int llread(unsigned char *buf){
                 }
                 if(byte== FLAG){
                     state= FLAG_RCV;
-                    //total_error_frames++;
+                    
                 }
-                else{state=START; total_error_frames++;}
+                else{state=START;}
                 break;
             case BCC1:
                 if(control_field==0x0B){
@@ -432,21 +417,16 @@ int llread(unsigned char *buf){
                     data_byte_counter--;
                     buf[data_byte_counter]='\0';
                     for(int i =0; i <=data_byte_counter; i++){
-                        //printf("Buffer element: %x \n", buf[i]);
+
                         accumulator=(accumulator ^ buf[i]);
                     }
-                    //accumulator=(accumulator^special);
-                    //printf("Start Buffer %x \n", buf[0]);
-                    //printf("BCC2 :%x \n", bcc2);
-                    //printf("Acumulator: %x \n", accumulator);
                     if(bcc2==accumulator){
                         printf("Sending RR\n");
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
-                        //printf("data_byte_counter: %d\n", data_byte_counter);
                         alarm(0);
-                        total_frames_received++;
+                        
                         end_bits = clock();
                         total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
                         return data_byte_counter;
@@ -457,8 +437,6 @@ int llread(unsigned char *buf){
                         //printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         return -1;
-                        total_error_frames++;
-                        total_frames_received++;
                     }
 
                 }
@@ -584,7 +562,6 @@ int llclose(int showStatistics){
                             perror("tcsetattr");
                             return -1;
                     }
-                     //close(fd);
                      return 0;
                 default:
                     break;
@@ -742,12 +719,6 @@ unsigned char readresponseByte(bool waitingforUA){
                 if(byte ==C_UA ||byte==C_DISC ){
                     state_ = C_RCV;
                     control_byte = byte;
-                    if(byte==C_UA){
-                    printf("    UA    ");
-                    } 
-                    if(byte==C_DISC){
-                        printf(" DISC");
-                    }
                 }
                 else if (byte != FLAG) state_ = START;
                 else{
@@ -795,35 +766,19 @@ void ShowStatistics(){
     printf("\n---STATISTICS---\n");
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
-    printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
-    double fer= (double)total_error_frames/ (double)total_frames_received;
+    printf("Maximum Data to be transmitted: %d\n", MAX_PAYLOAD_SIZE);
     printf("Number of bytes sent: %d\n", bytes_sent);
     printf("Time spent sending bits: %f\n", total_time);
     double debit= (double)bytes_sent/ total_time;
     printf("Debit: %f\n", debit);
     printf("Propagating time: %f\n", t_prop);
-    printf("Corrupted frames: %d\n", total_error_frames);
-    printf("Total supposed received frames: %d\n", total_frames_received);
     printf("\n---STATISTICS---\n");
-    /*
-    if(BIT_FLIPPING){
-        
-        printf("Frame error rate: %f\n", fer);
-
-    }
-    */
-    
-    
 }
 unsigned char simulateBitError(unsigned char byte, double errorRate) {
     
-    //struct timespec ts;
-    //clock_gettime(CLOCK_MONOTONIC, &ts);
-    //srand(ts.tv_nsec);
      
     double randomError = (double)rand() / RAND_MAX;
-    //printf("%f",randomError);
-    //printf("%f", errorRate);
+
     if (randomError < errorRate) {
         
         int bitToFlip = rand() % 8;  
@@ -831,35 +786,4 @@ unsigned char simulateBitError(unsigned char byte, double errorRate) {
 
     }
     return byte;
-}
-
-void estimateFER(int frameSize, double errorRate, double errorRate2) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    srand(ts.tv_nsec);
-    
-    int count = 0;
-
-    while (count < 3) {
-        bool corrupted = false;
-
-        for (int i = 0; i < frameSize; i++) {
-            double randomError = (double)rand() / RAND_MAX;
-            if(corrupted){continue;}
-            if (randomError < (i < 6 ? errorRate : errorRate2)) {
-                printf(" -----------------------------C MOOON ----------------------");
-                corrupted = true;
-                total_error_frames++;  
-                break;  
-            }
-        }
-        
-        if (corrupted) {
-            total_frames_received++;  
-            count++;
-        } else {
-            return;  
-        }
-    }
-    return;
 }

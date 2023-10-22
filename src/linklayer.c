@@ -334,6 +334,7 @@ int llread(unsigned char *buf, int FER){
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
+        
         if(FER==TRUE){
         byte = simulateBitError(byte, 20);
         }
@@ -536,11 +537,15 @@ int llclose(int showStatistics){
                         break;
                     }
                 case STOP:
-                      printf("Last UA");
+                    printf("Last UA");
                       //alarm(0);
-                      sendSupervisionFrame(A_FSENDER,C_UA);
-                   
-
+                    sendSupervisionFrame(A_FSENDER,C_UA);
+                       
+                     if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+                    {
+                            perror("tcsetattr");
+                            return -1;
+                    }
                      //close(fd);
                      return 0;
                 default:
@@ -740,14 +745,13 @@ void ShowStatistics(){
 unsigned char simulateBitError(unsigned char byte, double errorRate) {
     srand(time(NULL));
 
-    // Generate a random number to simulate the error
     double randomError = (double)rand() / RAND_MAX;
-
+    printf("%f",randomError);
     if (randomError < errorRate) {
-        // Bit error - flip a random bit in the byte
-        int bitToFlip = rand() % 8;  // Generate a random bit position to flip
-        byte ^= (1 << bitToFlip);    // Flip the selected bit
-    }
+        
+        int bitToFlip = rand() % 8;  
+        byte ^= (1 << bitToFlip);    
 
     return byte;
+    }
 }

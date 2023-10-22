@@ -323,7 +323,7 @@ int llwrite(unsigned char *buf, int bufSize){
         return -1;
     }
 }
-int llread(unsigned char *buf){
+int llread(unsigned char *buf, int FER){
     printf("Reached llread!");
     unsigned char byte;
     char control_field;
@@ -334,7 +334,9 @@ int llread(unsigned char *buf){
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
-        
+        if(FER==TRUE){
+        byte = simulateBitError(byte, 20);
+        }
         switch (state){
             
             case START:
@@ -478,6 +480,7 @@ int llclose(int showStatistics){
         }
         if(alarmEnabled==TRUE){
                if(read(fd ,&byte, 1)>0){
+                //byte = simulateBitError(byte, 20);
                 switch (state)
                 {
                 case START:
@@ -731,14 +734,18 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
 }
-void simulateBitErrors(unsigned char *frame, int frameSize, double errorRate) {
+
+unsigned char simulateBitError(unsigned char byte, double errorRate) {
     srand(time(NULL));
 
-    for (int i = 0; i < frameSize; i++) {
-        double randomValue = (double)rand() / RAND_MAX;
-        if (randomValue < errorRate) {
-            // Flip a random bit by XORing with 1
-            frame[i] ^= 0x01;
-        }
+    // Generate a random number to simulate the error
+    double randomError = (double)rand() / RAND_MAX;
+
+    if (randomError < errorRate) {
+        // Bit error - flip a random bit in the byte
+        int bitToFlip = rand() % 8;  // Generate a random bit position to flip
+        byte ^= (1 << bitToFlip);    // Flip the selected bit
     }
+
+    return byte;
 }

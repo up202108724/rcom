@@ -17,7 +17,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     int size_aux=0; // era para ser um unsigned long
     int result;
     int showStatistics=TRUE;
-    
+    int FER= FALSE;
 
     if (strcmp(role, "tx") == 0) {
         int fd = open(filename, O_RDONLY);
@@ -164,7 +164,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         //printf("Good opening");
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         int packetSize = -1;
-        while ((packetSize = llread(buffer)) < 0);
+        while ((packetSize = llread(buffer,FER)) < 0);
         printf("-------------------------------------------------Received First Packet\n");
 
         //--------------------
@@ -176,7 +176,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         //-------------------
 
         while(1) {
-            if(llread(buffer) == -1) {
+            FER=TRUE;
+            if(llread(buffer,FER) == -1) {
                 printf("------------------------------------------------------------Continuou\n");
                 continue;
             }

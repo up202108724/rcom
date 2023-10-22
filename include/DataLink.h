@@ -69,7 +69,7 @@ int llwrite(unsigned char *buf, int bufSize);
 
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.
-int llread( unsigned char *buf);
+int llread( unsigned char *buf, int FER);
 
 // Close previously opened connection.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.
@@ -88,6 +88,6 @@ unsigned char readresponseByte(bool waitingforUA);
 
 void ShowStatistics();
 
-void simulateBitErrors(unsigned char *frame, int frameSize, double errorRate);
- 
+unsigned char simulateBitError(unsigned char byte, double errorRate);
+
 #endif

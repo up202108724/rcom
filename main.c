@@ -23,8 +23,6 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    
-    double cpu_time_used;
 
     const char *serialPort = argv[1];
     const char *role = argv[2];
@@ -47,7 +45,6 @@ int main(int argc, char *argv[])
     applicationLayer(serialPort, role, BAUDRATE, N_TRIES, TIMEOUT, filename);
     
    
-    printf("Time elapsed: %f\n", cpu_time_used);
 
     return 0;
 }

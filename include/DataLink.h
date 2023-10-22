@@ -20,7 +20,7 @@
 #define MAX_PAYLOAD_SIZE 1000
 #define BER 0.000001
 #define BIT_FLIPPING 0
-#define SHOW_STATISTICS 0
+#define SHOW_STATISTICS 1
 
 
 #define FLAG 0x7E

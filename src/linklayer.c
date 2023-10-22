@@ -15,6 +15,8 @@ struct termios newtio;
 Role role;
 clock_t start,end;
 double cpu_time_used;
+double total_time=0;
+int bytes_sent=0;
 extern double t_prop;
 bool waitingforUA=false;
 void alarmHandler(int signal)
@@ -80,8 +82,10 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 int llopen(LinkLayer sp_config) {
     //alarmCount = 0;
     clock_t start, end;
+    clock_t start_bits, end_bits;
     double cpu_time_used;
     start = clock();
+    start_bits = clock();
     srand(NULL);
     (void) signal(SIGALRM, alarmHandler);
     int check_connection = establish_connection(sp_config.serialPort, sp_config);
@@ -101,6 +105,7 @@ int llopen(LinkLayer sp_config) {
             }
             while (alarmEnabled == TRUE && state != STOP) {
                 if (read(fd, &byte, 1) > 0) {
+                    bytes_sent++;
                     
                     
                     switch (state) {
@@ -157,6 +162,7 @@ int llopen(LinkLayer sp_config) {
        
         while (state != STOP) {
             if (read(fd, &byte, 1) > 0) {
+                bytes_sent++;
                
                 switch (state) {
                     case START:
@@ -214,6 +220,9 @@ int llopen(LinkLayer sp_config) {
         }
         if(sendSupervisionFrame(A_FRECEIVER, C_UA)==-1){return -1;};
     }
+
+    end_bits = clock();
+    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
 
     return 0;
 }
@@ -330,11 +339,14 @@ int llread(unsigned char *buf){
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
+    clock_t start_bits, end_bits;
+    start_bits = clock();
     //unsigned char special;
     
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
+            bytes_sent++;
         //printf("Byte: %x\n",byte);
         
         if(BIT_FLIPPING && state==BCC1){
@@ -463,10 +475,14 @@ int llread(unsigned char *buf){
         }
     }
    }
+    end_bits = clock();
+    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
 return -1;
 }
 
 int llclose(int showStatistics){
+    clock_t start_bits, end_bits;
+    start_bits = clock();
     alarmCount=0;
     alarmEnabled=FALSE;
     LinkLayerState state= START;
@@ -483,6 +499,7 @@ int llclose(int showStatistics){
         }
         if(alarmEnabled==TRUE){
                if(read(fd ,&byte, 1)>0){
+                bytes_sent++;
                 switch (state)
                 {
                 case START:
@@ -579,7 +596,9 @@ int llclose(int showStatistics){
                             return -1;
                     }
                 close(fd);
-                if(showStatistics==1){
+                end_bits = clock();
+                total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
+                if(SHOW_STATISTICS){
                     ShowStatistics();
                 }
                 return 0;
@@ -594,6 +613,9 @@ int llclose(int showStatistics){
 
 unsigned char readControlByte(){
 
+    clock_t start_bits, end_bits;
+    start_bits = clock();
+
     unsigned char byte = 0;
     unsigned char control_byte = 0;
     LinkLayerState state_ = START;
@@ -601,6 +623,7 @@ unsigned char readControlByte(){
     while (state_ != STOP && (alarmEnabled == TRUE|| role==Receptor)){ 
        
         if(read(fd, &byte, 1) > 0){
+            bytes_sent++;
             //printf("byte: %x\n", byte);
 
             switch (state_)
@@ -657,10 +680,16 @@ unsigned char readControlByte(){
         }
     }
 
+    end_bits = clock();
+    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
+
     return control_byte;
 
 }
 unsigned char readresponseByte(bool waitingforUA){
+
+    clock_t start_bits, end_bits;
+    start_bits = clock();
 
     unsigned char byte = 0;
     unsigned char control_byte = 0;
@@ -669,6 +698,7 @@ unsigned char readresponseByte(bool waitingforUA){
     while (state_ != STOP){ 
        
         if(read(fd, &byte, 1) > 0){
+            bytes_sent++;
             //printf("byte: %x\n", byte);
 
             switch (state_)
@@ -735,6 +765,8 @@ unsigned char readresponseByte(bool waitingforUA){
         if(sendSupervisionFrame(A_FRECEIVER,C_DISC)==-1){return -1;}
         
         }
+    end_bits = clock();
+    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
     return control_byte;
 
 }
@@ -744,11 +776,13 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
     printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
+    printf("Number of bytes sent: %d\n", bytes_sent);
+    printf("Time spent sending bits: %f\n", total_time);
     /*
     if(BIT_FLIPPING){
         double fer = 1-pow((double)(1-BER),(double)MAX_PAYLOAD_SIZE);
         printf("Frame error rate: %f\n", fer);
-    }
+    }*/
     
     
 }

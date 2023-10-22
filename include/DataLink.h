@@ -18,7 +18,7 @@
 #define FALSE 0
 #define TRUE 1
 #define MAX_PAYLOAD_SIZE 1000
-#define BER 0.2
+#define BER 0.000001
 #define BIT_FLIPPING 1
 #define SHOW_STATISTICS 1
 

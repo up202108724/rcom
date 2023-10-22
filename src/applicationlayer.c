@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <math.h>
-#include <time.h>
 
 #include "applicationlayer.h"
 #include "DataLink.h"
@@ -78,6 +77,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }
         printf("Size of control packet: %d", size_aux);
+        //sleep(10);
         int err= llwrite(control_packet, size_aux);
         printf("%d",err);
         if (err ==-1) {
@@ -132,7 +132,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }else{
             
-            //printf("Before Alarm");
+            //sleep(5);
             result=llclose(showStatistics);}
         free(control_packet);
 
@@ -235,6 +235,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         */
         free(buffer);
+        
         result=llclose(SHOW_STATISTICS);
         if(result == -1) {
             printf("Error closing connection.\n");

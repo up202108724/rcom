@@ -12,15 +12,16 @@
 #include <signal.h>
 #include <time.h>
 #include <stdbool.h>
-#include <time.h>
+#include <math.h>
 
 #define BUF_SIZE 256
 #define FALSE 0
 #define TRUE 1
 #define MAX_PAYLOAD_SIZE 1000
-#define BER 0
+#define BER 0.000001
 #define BIT_FLIPPING 0
-#define SHOW_STATISTICS 1
+#define SHOW_STATISTICS 0
+
 
 #define FLAG 0x7E
 #define ESC 0x7D

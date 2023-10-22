@@ -323,7 +323,7 @@ int llwrite(unsigned char *buf, int bufSize){
         return -1;
     }
 }
-int llread(unsigned char *buf, int FER){
+int llread(unsigned char *buf){
     printf("Reached llread!");
     unsigned char byte;
     char control_field;
@@ -335,7 +335,7 @@ int llread(unsigned char *buf, int FER){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
         
-        if(FER==TRUE){
+        if(BIT_FLIPPING){
         byte = simulateBitError(byte, BER);
         }
         switch (state){

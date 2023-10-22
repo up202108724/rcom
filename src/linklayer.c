@@ -285,6 +285,7 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[j++] = FLAG;
     int reject = 0;
     int accept = 0;
+    estimateFER(frameSize, BER_HEADERFIELD, BER_DATAFIELD);
     //printf("AlarmEnabled: %d\n", alarmEnabled);
     /*
     for(int i=0;i<frameSize/2;i++){
@@ -308,7 +309,7 @@ int llwrite(unsigned char *buf, int bufSize){
             
             if(write(fd, frame, frameSize) == -1){
                 printf("Error writing.\n");
-            }
+            }else{ total_frames_received++;}
             
             unsigned char result = readControlByte();
             //printf("Result: %x\n", result);
@@ -375,7 +376,7 @@ int llread(unsigned char *buf){
                     state = A_RCV;
                 }else if(byte== FLAG){
                     state= FLAG_RCV;
-                    total_error_frames++;
+                    //total_error_frames++;
                     //total_error_frames_on_it++;
                 }
                 else  { state= START;}
@@ -384,7 +385,7 @@ int llread(unsigned char *buf){
             case A_RCV:
                 if(byte== FLAG){
                     state= FLAG_RCV;
-                    total_error_frames++;
+                    //total_error_frames++;
                     //total_error_frames_on_it++;
                 }
                 //trama de informação
@@ -401,7 +402,7 @@ int llread(unsigned char *buf){
                     //total_error_frames-=total_error_frames_on_it;
                 }
                 
-                else { state=START; total_error_frames++;}
+                else { state=START; }//total_error_frames++;
                 
                 break;
             case C_RCV:                 
@@ -411,7 +412,7 @@ int llread(unsigned char *buf){
                 }
                 if(byte== FLAG){
                     state= FLAG_RCV;
-                    total_error_frames++;
+                    //total_error_frames++;
                 }
                 else{state=START; total_error_frames++;}
                 break;
@@ -795,15 +796,22 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
     printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
-    fer= total_error_frames/total_frames_received;
+    double fer= (double)total_error_frames/ (double)total_frames_received;
     printf("Number of bytes sent: %d\n", bytes_sent);
     printf("Time spent sending bits: %f\n", total_time);
+    double debit= (double)bytes_sent/ total_time;
+    printf("Debit: %f\n", debit);
     printf("Propagating time: %f\n", t_prop);
+    printf("Corrupted frames: %d\n", total_error_frames);
+    printf("Total supposed received frames: %d\n", total_frames_received);
+    printf("\n---STATISTICS---\n");
+    /*
     if(BIT_FLIPPING){
         
         printf("Frame error rate: %f\n", fer);
 
     }
+    */
     
     
 }
@@ -814,7 +822,7 @@ unsigned char simulateBitError(unsigned char byte, double errorRate) {
     //srand(ts.tv_nsec);
      
     double randomError = (double)rand() / RAND_MAX;
-    printf("%f",randomError);
+    //printf("%f",randomError);
     //printf("%f", errorRate);
     if (randomError < errorRate) {
         
@@ -823,4 +831,35 @@ unsigned char simulateBitError(unsigned char byte, double errorRate) {
 
     }
     return byte;
+}
+
+void estimateFER(int frameSize, double errorRate, double errorRate2) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    srand(ts.tv_nsec);
+    
+    int count = 0;
+
+    while (count < 3) {
+        bool corrupted = false;
+
+        for (int i = 0; i < frameSize; i++) {
+            double randomError = (double)rand() / RAND_MAX;
+            if(corrupted){continue;}
+            if (randomError < (i < 6 ? errorRate : errorRate2)) {
+                printf(" -----------------------------C MOOON ----------------------");
+                corrupted = true;
+                total_error_frames++;  
+                break;  
+            }
+        }
+        
+        if (corrupted) {
+            total_frames_received++;  
+            count++;
+        } else {
+            return;  
+        }
+    }
+    return;
 }

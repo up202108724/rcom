@@ -6,6 +6,7 @@
         "applicationlayer.h": "c",
         "datalink.h": "c",
         "stdio.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "cmath": "c"
     }
 }

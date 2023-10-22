@@ -81,6 +81,7 @@ int llopen(LinkLayer sp_config) {
     clock_t start, end;
     double cpu_time_used;
     start = clock();
+    srand(NULL);
     (void) signal(SIGALRM, alarmHandler);
     int check_connection = establish_connection(sp_config.serialPort, sp_config);
     if (check_connection < 0) {
@@ -741,20 +742,22 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
     printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
-    /*
+    
     if(BIT_FLIPPING){
-        double fer = (double)(1-(1-BER)^MAX_PAYLOAD_SIZE);
+        double fer = 1-pow((double)(1-BER),(double)MAX_PAYLOAD_SIZE);
         printf("Frame error rate: %f\n", fer);
     }
-    */
+    
     
 }
 unsigned char simulateBitError(unsigned char byte, double errorRate) {
     
+    /*
     struct timespec ts;
     
-    clock_gettime(CLOCK_MONOTONIC , &ts);
-    srand(ts.tv_nsec); 
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    srand(ts.tv_nsec);
+    */ 
     double randomError = (double)rand() / RAND_MAX;
     printf("%f",randomError);
     printf("%f", errorRate);

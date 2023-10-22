@@ -79,17 +79,20 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         printf("Size of control packet: %d", size_aux);
         //sleep(10);
+        start_=clock(); // Tempo de processamento
+        printf("Start: %ld\n", start_);
         int err= llwrite(control_packet, size_aux);
         printf("%d",err);
         if (err ==-1) {
             printf("Error transmitting information.1\n");
             return;
         }
-       
-        start_=clock(); // Tempo de processamento
+        end_=clock(); // Record the end time for the first packet
+        printf("End: %ld\n", end_);
         printf("Start: %ld\n", start_);
-        
-        printf("Good llwrite\n");
+        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
+       
+        //printf("Good llwrite\n");
 
         unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * size);  
         read(fd, content, size);
@@ -124,7 +127,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             content += dataSize; 
         }
 
-        printf("Good llwrite2\n");
+        //printf("Good llwrite2\n");
 
         control_packet[0] = C_END;
         result=llwrite(control_packet, size_aux); 
@@ -167,22 +170,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         connectionParameters.baudRate = baudRate;
         connectionParameters.numTransmissions = nTries;
         connectionParameters.timeout = timeout;
-        printf("one");
         if (llopen(connectionParameters) == -1) {
             printf("Not opening the serial port.\n");
             return;
         } 
-        //else{printf("two");}
-        //printf("Good opening");
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         int packetSize = -1;
         while ((packetSize = llread(buffer)) < 0);
         
-        end_=clock(); // Record the end time for the first packet
-        printf("End: %ld\n", end_);
-        printf("Start: %ld\n", start_);
-        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
-        firstPacketReceived = 1; // Set the flag to indicate the first packet has been received
+
          
         printf("-------------------------------------------------Received First Packet\n");
 

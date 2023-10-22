@@ -237,7 +237,6 @@ int llopen(LinkLayer sp_config) {
 int llwrite(unsigned char *buf, int bufSize){
     alarmCount=0;
     alarmEnabled=FALSE;
-    printf("Reached llwrite!");
     int frameSize = 6 + bufSize;
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
@@ -247,7 +246,6 @@ int llwrite(unsigned char *buf, int bufSize){
     alarmEnabled=FALSE;
     memcpy(frame + 4, buf, bufSize);
     unsigned char BCC2 = buf[0];
-    printf("buf[0]: %x\n", buf[0]);
     for (int i = 1; i < bufSize; i++)
     {
         BCC2 ^= buf[i];
@@ -285,7 +283,6 @@ int llwrite(unsigned char *buf, int bufSize){
 
     //frame[j++] = BCC2;
     frame[j++] = FLAG;
-    if(j==frameSize){printf("valid size");}
     int reject = 0;
     int accept = 0;
     //printf("AlarmEnabled: %d\n", alarmEnabled);
@@ -314,7 +311,7 @@ int llwrite(unsigned char *buf, int bufSize){
             }
             
             unsigned char result = readControlByte();
-            printf("Result: %x\n", result);
+            //printf("Result: %x\n", result);
             if(result==0) continue;
             else if(result==C_REJ(0) || result==C_REJ(1)){
                 reject=1;
@@ -330,7 +327,7 @@ int llwrite(unsigned char *buf, int bufSize){
             break;
         }
     }
-    printf("frameSize: %d\n", frameSize);
+    //printf("frameSize: %d\n", frameSize);
     free(frame);
     if(accept==1){
         
@@ -446,15 +443,17 @@ int llread(unsigned char *buf){
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
-                        printf("data_byte_counter: %d\n", data_byte_counter);
+                        //printf("data_byte_counter: %d\n", data_byte_counter);
                         alarm(0);
                         total_frames_received++;
+                        end_bits = clock();
+                        total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
                         return data_byte_counter;
                     }
                     
                     else{
                         printf("Sending REJ\n");
-                        printf("data_byte_counter: %d\n", data_byte_counter);
+                        //printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
                         return -1;
                         total_error_frames++;
@@ -496,8 +495,7 @@ int llread(unsigned char *buf){
         }
     }
    }
-    end_bits = clock();
-    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
+
 return -1;
 }
 
@@ -611,14 +609,14 @@ int llclose(int showStatistics){
                 printf("Finishing Program!!!!");
                 end=clock();
                 printf("End: %ld\n", end);
+                end_bits = clock();
+                total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
                  if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");
                             return -1;
                     }
                 close(fd);
-                end_bits = clock();
-                total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
                 if(SHOW_STATISTICS){
                     ShowStatistics();
                 }
@@ -800,6 +798,7 @@ void ShowStatistics(){
     fer= total_error_frames/total_frames_received;
     printf("Number of bytes sent: %d\n", bytes_sent);
     printf("Time spent sending bits: %f\n", total_time);
+    printf("Propagating time: %f\n", t_prop);
     if(BIT_FLIPPING){
         
         printf("Frame error rate: %f\n", fer);

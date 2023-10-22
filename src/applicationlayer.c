@@ -86,7 +86,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }
        
-        start_=clock(); // Record the start time for the first packet
+        start_=clock(); // Tempo de processamento
         printf("Start: %ld\n", start_);
         
         printf("Good llwrite\n");

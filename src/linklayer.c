@@ -85,6 +85,7 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 
 int llopen(LinkLayer sp_config) {
     //alarmCount = 0;
+    srand(NULL);
     clock_t start, end;
     clock_t start_bits, end_bits;
     double cpu_time_used;
@@ -352,7 +353,7 @@ int llread(unsigned char *buf){
         if(read(fd, &byte,1) >0){
             bytes_sent++;
         //printf("Byte: %x\n",byte);
-        /*
+        
         if(BIT_FLIPPING){
         if(!(state==BCC1 || state== READING_DATA || state==DATA_RECEIVED_ESC)){
         byte = simulateBitError(byte, BER_HEADERFIELD);
@@ -364,7 +365,7 @@ int llread(unsigned char *buf){
             byte = simulateBitError(byte, BER_DATAFIELD);
         }
         }
-        */
+        
         switch (state){
             
             case START:
@@ -809,9 +810,9 @@ void ShowStatistics(){
 }
 unsigned char simulateBitError(unsigned char byte, double errorRate) {
     
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    srand(ts.tv_nsec);
+    //struct timespec ts;
+    //clock_gettime(CLOCK_MONOTONIC, &ts);
+    //srand(ts.tv_nsec);
      
     double randomError = (double)rand() / RAND_MAX;
     printf("%f",randomError);

@@ -539,13 +539,9 @@ int llclose(int showStatistics){
                       printf("Last UA");
                       //alarm(0);
                       sendSupervisionFrame(A_FSENDER,C_UA);
-                      if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
-                    {
-                            perror("tcsetattr");
-                            return -1;
-                    }
+                   
 
-                     close(fd);
+                     //close(fd);
                      return 0;
                 default:
                     break;
@@ -570,6 +566,12 @@ int llclose(int showStatistics){
             if(byte==C_UA){
                 printf("Finishing Program!!!!");
                 end=clock();
+                 if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
+                    {
+                            perror("tcsetattr");
+                            return -1;
+                    }
+                close(fd);
                 if(showStatistics==1){
                     ShowStatistics();
                 }

@@ -217,7 +217,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         */
         free(buffer);
-        result=llclose(showStatistics);
+        result=llclose(SHOW_STATISTICS);
         if(result == -1) {
             printf("Error closing connection.\n");
             return;

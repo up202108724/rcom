@@ -335,7 +335,7 @@ int llread(unsigned char *buf){
         if(read(fd, &byte,1) >0){
         //printf("Byte: %x\n",byte);
         
-        if(BIT_FLIPPING){
+        if(BIT_FLIPPING && state==BCC1){
         byte = simulateBitError(byte, BER);
         }
         switch (state){

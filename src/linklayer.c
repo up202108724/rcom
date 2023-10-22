@@ -15,6 +15,7 @@ struct termios newtio;
 Role role;
 clock_t start,end;
 double cpu_time_used;
+extern double t_prop;
 bool waitingforUA=false;
 void alarmHandler(int signal)
 {
@@ -570,6 +571,7 @@ int llclose(int showStatistics){
             if(byte==C_UA){
                 printf("Finishing Program!!!!");
                 end=clock();
+                printf("End: %ld\n", end);
                  if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");
@@ -741,6 +743,7 @@ void ShowStatistics(){
     cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
     printf("Time elapsed: %f\n", cpu_time_used);
     printf("Size of trama: %d\n", MAX_PAYLOAD_SIZE);
+    printf("Propagation time: %f\n", t_prop);
     /*
     if(BIT_FLIPPING){
         double fer = (double)(1-(1-BER)^MAX_PAYLOAD_SIZE);

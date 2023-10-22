@@ -7,9 +7,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <math.h>
+#include <time.h>
 
 #include "applicationlayer.h"
 #include "DataLink.h"
+
+double t_prop;
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
@@ -17,6 +20,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     int size_aux=0; // era para ser um unsigned long
     int result;
     int showStatistics=TRUE;
+    clock_t start_, end_;
+
+    int firstPacketSent = 0;
+    int firstPacketReceived = 0;
     
 
     if (strcmp(role, "tx") == 0) {
@@ -77,7 +84,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error transmitting information.1\n");
             return;
         }
-
+       
+        start_=clock(); // Record the start time for the first packet
+        printf("Start: %ld\n", start_);
+        
         printf("Good llwrite\n");
 
         unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * size);  
@@ -105,6 +115,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("Failed transmitting data packet.2\n");
                 return;
             }
+        
 
             
 
@@ -165,6 +176,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         unsigned char* buffer = (unsigned char*) malloc (MAX_PAYLOAD_SIZE);
         int packetSize = -1;
         while ((packetSize = llread(buffer)) < 0);
+        if (firstPacketReceived == 0) {
+                end_=clock(); // Record the end time for the first packet
+                printf("End: %ld\n", end_);
+                printf("Start: %ld\n", start_);
+                t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; // Calculate the propagation time
+                firstPacketReceived = 1; // Set the flag to indicate the first packet has been received
+            }
         printf("-------------------------------------------------Received First Packet\n");
 
         //--------------------

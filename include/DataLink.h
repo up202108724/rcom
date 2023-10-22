@@ -18,6 +18,9 @@
 #define FALSE 0
 #define TRUE 1
 #define MAX_PAYLOAD_SIZE 1000
+#define BER 0.2
+#define BIT_FLIPPING 1
+
 
 #define FLAG 0x7E
 #define ESC 0x7D
@@ -69,7 +72,7 @@ int llwrite(unsigned char *buf, int bufSize);
 
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.
-int llread( unsigned char *buf, int FER);
+int llread( unsigned char *buf);
 
 // Close previously opened connection.
 // if showStatistics == TRUE, link layer should print statistics in the console on close.

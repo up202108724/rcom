@@ -336,7 +336,7 @@ int llread(unsigned char *buf, int FER){
         //printf("Byte: %x\n",byte);
         
         if(FER==TRUE){
-        byte = simulateBitError(byte, 20);
+        byte = simulateBitError(byte, BER);
         }
         switch (state){
             

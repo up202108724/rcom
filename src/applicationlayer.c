@@ -36,19 +36,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         unsigned long size = (unsigned long) st.st_size;
         int L1 = ceil( floor(log2(size )+1) / 8);
 	    int L2 = strlen(filename);
-        printf("Size of L1: %d   ", L1);
-        printf("Size of L2: %d   ", L2);
         size_aux = 1 + 1 + 1 + L1 + 2 + L2;
-        printf("Size of size_aux: %d", size_aux);
         int i = 0;
         unsigned char* control_packet = (unsigned char*) malloc(size_aux);
         control_packet[i++] = C_START;
         control_packet[i++] = 0;
         control_packet[i++] = L1;
         int size_aux_aux= size_aux;
-        
-
-        
        for (unsigned char j = 0 ; j < L1 ; j++) {
         control_packet[2+L1-j] = size_aux_aux & 0xFF;
         size_aux_aux >>= 8;
@@ -75,7 +69,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Error setting connection.\n");
             return;
         }
-        printf("Size of control packet: %d", size_aux);
+        printf("Size of control packet: %d \n", size_aux);
         //sleep(5);
         start_=clock(); // Tempo de processamento
         printf("Start: %ld\n", start_);

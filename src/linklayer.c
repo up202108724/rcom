@@ -143,7 +143,6 @@ int llopen(LinkLayer sp_config) {
                         case BCC1:
                             if (byte == FLAG) {
                                 state = STOP;
-                                printf("reached!!!");
                             } else {
                                 state = START;
                             }
@@ -328,7 +327,7 @@ int llwrite(unsigned char *buf, int bufSize){
     }
 }
 int llread(unsigned char *buf){
-    printf("Reached llread!");
+    printf("Reached llread! \n");
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
@@ -484,7 +483,7 @@ int llclose(int showStatistics){
     LinkLayerState state= START;
     unsigned char byte;
     (void) signal(SIGALRM,alarmHandler);
-    printf("Reached llclose!");
+    printf("Reached llclose! \n");
     if (role==Transmissor){
         start_bits_tx = clock();
     while(state != STOP &&  (alarmCount < attempts) ){
@@ -505,7 +504,7 @@ int llclose(int showStatistics){
                     }
                     break;
                 case FLAG_RCV:
-                    printf("Byte Address :%x ",byte);
+                    //printf("Byte Address :%x ",byte);
                     if(byte==A_FRECEIVER){
                         state=A_RCV;
                         break;
@@ -518,7 +517,7 @@ int llclose(int showStatistics){
                     }
                     break;
                 case A_RCV:
-                    printf("Byte CONTROL:%x ",byte);
+                    //printf("Byte CONTROL:%x ",byte);
                     if(byte==FLAG){
                         state=FLAG_RCV;
                     }
@@ -528,7 +527,7 @@ int llclose(int showStatistics){
                     }
                 break;
                 case C_RCV:
-                    printf("Byte BCC:%x ",byte);
+                    //printf("Byte BCC:%x ",byte);
                     if (byte==(C_DISC^A_FRECEIVER)){
                         state= BCC1;
                         break;
@@ -541,9 +540,9 @@ int llclose(int showStatistics){
                     }
                     break;
                 case BCC1:
-                    printf("Byte FLAG:%x ",byte);
+                    //printf("Byte FLAG:%x ",byte);
                     if(byte==FLAG){
-                        printf("Falling");
+                        //printf("Falling");
                         state=STOP;
                         
                     }
@@ -552,7 +551,7 @@ int llclose(int showStatistics){
                         break;
                     }
                 case STOP:
-                    printf("Last UA");
+                    //printf("Last UA");
                       //alarm(0);
                     sendSupervisionFrame(A_FSENDER,C_UA);
                        

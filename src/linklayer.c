@@ -268,7 +268,7 @@ int llwrite(unsigned char *buf, int bufSize){
     int reject = 0;
     int accept = 0;
     time_t startTotalTime, endTotalTime;
-    startTotalTime = time(NULL);
+    time(&startTotalTime);
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -322,11 +322,13 @@ int llwrite(unsigned char *buf, int bufSize){
 }
 int llread(unsigned char *buf){
     printf("Reached llread! \n");
+    int acc= 0;
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
+    double diff_time;
     time_t start_bits, end_bits;
-    start_bits = time(NULL);
+    time(&start_bits);
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
@@ -411,23 +413,20 @@ int llread(unsigned char *buf){
 
                         accumulator=(accumulator ^ buf[i]);
                     }
-                    end_bits = time(NULL);
-                    total_time_read += ((double) (end_bits - start_bits));
-                    printf("Total time read: %f\n", total_time_read);
                     if(bcc2==accumulator){
                         printf("Sending RR\n");
+                        acc=1;
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
+                        
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         alarm(0);
-                        return data_byte_counter;
                     }
                     
                     else{
                         printf("Sending REJ\n");
                         //printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
-                        return -1;
                     }
 
                 }
@@ -465,7 +464,14 @@ int llread(unsigned char *buf){
         }
     }
    }
-
+if(acc==1){ 
+            sleep(1);
+            time(&end_bits);
+            diff_time= difftime(end_bits,start_bits);
+            total_time_read+= diff_time;
+            printf("Execution time = %f\n", diff_time);
+            printf("Total time read: %f\n", total_time_read);
+            return data_byte_counter;}
 return -1;
 }
 

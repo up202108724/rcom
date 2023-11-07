@@ -13,10 +13,9 @@ unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
-clock_t start,end;
 double total_time=0;
+double total_time_read=0;
 int bytes_sent=0;
-extern double t_prop;
 bool waitingforUA=false;
 bool lastbyte=false;
 void alarmHandler(int signal)
@@ -81,11 +80,6 @@ int sendSupervisionFrame(unsigned char A, unsigned char C){
 
 int llopen(LinkLayer sp_config) {
     srand(time(NULL));
-    clock_t start_bits, end_bits;
-    double cpu_time_used;
-    start = clock();
-    start_bits = clock();
-    srand(NULL);
     (void) signal(SIGALRM, alarmHandler);
     int check_connection = establish_connection(sp_config.serialPort, sp_config);
     if (check_connection < 0) {
@@ -219,9 +213,6 @@ int llopen(LinkLayer sp_config) {
         if(sendSupervisionFrame(A_FRECEIVER, C_UA)==-1){return -1;};
     }
 
-    end_bits = clock();
-    
-    total_time += (((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC);
 
     return 0;
 }
@@ -276,6 +267,8 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[j++] = FLAG;
     int reject = 0;
     int accept = 0;
+    time_t startTotalTime, endTotalTime;
+    startTotalTime = time(NULL);
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -319,7 +312,8 @@ int llwrite(unsigned char *buf, int bufSize){
     }
     free(frame);
     if(accept==1){
-        
+        endTotalTime = time(NULL);
+        total_time += ((double) (endTotalTime - startTotalTime));
         return bufSize;
     }
     else{
@@ -331,8 +325,8 @@ int llread(unsigned char *buf){
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
-    clock_t start_bits, end_bits;
-    start_bits = clock();
+    time_t start_bits, end_bits;
+    start_bits = time(NULL);
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
@@ -417,15 +411,15 @@ int llread(unsigned char *buf){
 
                         accumulator=(accumulator ^ buf[i]);
                     }
+                    end_bits = time(NULL);
+                    total_time_read += ((double) (end_bits - start_bits));
+                    printf("Total time read: %f\n", total_time_read);
                     if(bcc2==accumulator){
                         printf("Sending RR\n");
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         alarm(0);
-                        
-                        end_bits = clock();
-                        total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
                         return data_byte_counter;
                     }
                     
@@ -475,9 +469,7 @@ int llread(unsigned char *buf){
 return -1;
 }
 
-int llclose(int showStatistics){
-    clock_t start_bits_tx, end_bits_tx;
-    clock_t start_bits_rx, end_bits_rx;
+int llclose(){
     alarmCount=0;
     alarmEnabled=FALSE;
     LinkLayerState state= START;
@@ -485,7 +477,6 @@ int llclose(int showStatistics){
     (void) signal(SIGALRM,alarmHandler);
     printf("Reached llclose! \n");
     if (role==Transmissor){
-        start_bits_tx = clock();
     while(state != STOP &&  (alarmCount < attempts) ){
         if(alarmEnabled==FALSE){
             
@@ -560,10 +551,11 @@ int llclose(int showStatistics){
                             perror("tcsetattr");
                             return -1;
                     }
-                    end_bits_tx=clock();
-                    total_time += ((double) (end_bits_tx - start_bits_tx)) / (double) CLOCKS_PER_SEC;
 
-
+                    if(SHOW_STATISTICS){
+                        ShowStatistics();
+                    }
+                
                      return 0;
                 default:
                     break;
@@ -576,7 +568,6 @@ int llclose(int showStatistics){
         }
     }
     else if (role==Receptor){
-        start_bits_rx=clock();
         while(1){
             if(waitingforUA==false){
             byte=readresponseByte(waitingforUA);
@@ -588,10 +579,6 @@ int llclose(int showStatistics){
             if(byte==-1){return -1;}
             if(byte==C_UA){
                 printf("Finishing Program!!!!");
-                end=clock();
-                printf("End: %ld\n", end);
-                end_bits_rx = clock();
-                total_time += ((double) (end_bits_rx - start_bits_rx)) / (double) CLOCKS_PER_SEC;
                  if (tcsetattr(fd, TCSANOW, &oldtio) == -1)
                     {
                             perror("tcsetattr");
@@ -612,9 +599,6 @@ int llclose(int showStatistics){
 }
 
 unsigned char readControlByte(){
-
-    clock_t start_bits, end_bits;
-    start_bits = clock();
 
     unsigned char byte = 0;
     unsigned char control_byte = 0;
@@ -679,9 +663,6 @@ unsigned char readControlByte(){
 
         }
     }
-
-    end_bits = clock();
-    total_time += ((double) (end_bits - start_bits)) / (double) CLOCKS_PER_SEC;
 
     return control_byte;
 
@@ -763,14 +744,17 @@ unsigned char readresponseByte(bool waitingforUA){
 
 void ShowStatistics(){
     printf("\n---STATISTICS---\n");
-    double cpu_time_used = ((double) (end - start)) / (double) CLOCKS_PER_SEC;
-    printf("Time elapsed: %f\n", cpu_time_used);
+    printf("Role: %s\n", role==Transmissor ? "Transmitter" : "Receiver");
+    if(role==Transmissor){
+        printf("Total time elapsed: %f\n", total_time); 
+    }
+    else{
+        printf("Total time elapsed: %f\n", total_time_read); 
+    }
     printf("Maximum Data to be transmitted: %d\n", MAX_PAYLOAD_SIZE);
     printf("Number of bytes sent: %d\n", bytes_sent);
-    printf("Time spent sending bits: %f\n", total_time);
     double debit= (double)(bytes_sent * 8)/ total_time;
     printf("Debit: %f\n", debit);
-    printf("Propagating time: %f\n", t_prop);
     printf("\n---STATISTICS---\n");
 }
 unsigned char simulateBitError(unsigned char byte, double errorRate) {

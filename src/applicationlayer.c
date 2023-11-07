@@ -12,16 +12,14 @@
 #include "applicationlayer.h"
 #include "DataLink.h"
 
-double t_prop;
+
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
 {
     int size_aux=0; 
     int result;
-    int showStatistics=TRUE;
-    clock_t start_, end_;
-
+  
     
 
     if (strcmp(role, "tx") == 0) {
@@ -71,18 +69,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         printf("Size of control packet: %d \n", size_aux);
         //sleep(5);
-        start_=clock(); // Tempo de processamento
-        printf("Start: %ld\n", start_);
         int err= llwrite(control_packet, size_aux);
         printf("%d",err);
         if (err ==-1) {
             printf("Error transmitting information.1\n");
             return;
         }
-        end_=clock(); 
-        printf("End: %ld\n", end_);
-        printf("Start: %ld\n", start_);
-        t_prop = ((double) (start_ - end_)) / (double) CLOCKS_PER_SEC; 
+
        
 
         unsigned char* content = (unsigned char*)malloc(sizeof(unsigned char) * size);  
@@ -124,11 +117,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (result== -1) {
             printf("Error transmitting information.3\n");
             return;
-        }else{
-            
-            //sleep(5);
-            result=llclose(showStatistics);}
+        }
+
         free(control_packet);
+        result=llclose();
 
         if (result == -1) {
             printf("Error closing connection.\n");
@@ -209,7 +201,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         free(buffer);
         
-        result=llclose(SHOW_STATISTICS);
+        result=llclose();
         if(result == -1) {
             printf("Error closing connection.\n");
             return;

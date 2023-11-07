@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//Função principal da camada de aplicação
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
                       

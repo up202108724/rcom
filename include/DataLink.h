@@ -61,7 +61,7 @@ typedef struct{
 	int baudRate; /*Velocidade de transmissão*/
     Role role;
     unsigned int timeout; /*Valor do temporizador: 1 s*/
-    unsigned int numTransmissions;   
+    unsigned int numTransmissions; /*Número de tentativas*/
 	
 }LinkLayer;
 
@@ -71,24 +71,21 @@ int llopen(LinkLayer sp_config);
 // Send data in buf with size bufSize.
 // Return number of chars written, or "-1" on error.
 int llwrite(unsigned char *buf, int bufSize);
-
 // Receive data in packet.
 // Return number of chars read, or "-1" on error.
 int llread( unsigned char *buf);
-
 // Close previously opened connection.
-// if showStatistics == TRUE, link layer should print statistics in the console on close.
 // Return "1" on success or "-1" on error.
-int llclose(int showStatistics);
-
+int llclose();
+// Send a supervision frame.
 int sendSupervisionFrame(unsigned char A, unsigned char C);
-
+// Establish connection with serial port.
 int establish_connection(const char* port, LinkLayer sp_config);
-
+// Alarm handler.
 void alarmHandler(int signal);
-
+// Read the control byte.
 unsigned char readControlByte();
-
+// Read the response byte.
 unsigned char readresponseByte(bool waitingforUA);
 
 void ShowStatistics();

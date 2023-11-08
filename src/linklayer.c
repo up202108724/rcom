@@ -13,7 +13,7 @@ unsigned baudrate=0;
 struct termios oldtio;
 struct termios newtio;
 Role role;
-double total_time=0;
+double total_time_write=0;
 double total_time_read=0;
 int bytes_sent=0;
 bool waitingforUA=false;
@@ -318,9 +318,11 @@ int llwrite(unsigned char *buf, int bufSize){
             return 1;
             }
             long seconds = end.tv_sec - start.tv_sec;
-            printf("Time taken only in seconds: %lli seconds\n", seconds);
+            //printf("Time taken only in seconds: %lli seconds\n", seconds);
             long nanoseconds = end.tv_nsec - start.tv_nsec;
             double elapsed_time = seconds + nanoseconds / 1e9;
+            total_time_write+=elapsed_time;
+            printf("Total time write %f ", total_time_write);
         //endTotalTime = time(NULL);
         //total_time += ((double) (endTotalTime - startTotalTime));
         return bufSize;
@@ -778,14 +780,14 @@ void ShowStatistics(){
     printf("\n---STATISTICS---\n");
     printf("Role: %s\n", role==Transmissor ? "Transmitter" : "Receiver");
     if(role==Transmissor){
-        printf("Total time elapsed: %f\n", total_time); 
+        printf("Total time elapsed: %f\n", total_time_write); 
     }
     else{
         printf("Total time elapsed: %f\n", total_time_read); 
     }
     printf("Maximum Data to be transmitted: %d\n", MAX_PAYLOAD_SIZE);
     printf("Number of bytes sent: %d\n", bytes_sent);
-    double debit= (double)(bytes_sent * 8)/ total_time;
+    double debit= (double)(bytes_sent * 8)/ total_time_write;
     printf("Debit: %f\n", debit);
     printf("\n---STATISTICS---\n");
 }

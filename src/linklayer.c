@@ -37,11 +37,7 @@ int establish_connection(const char* port, LinkLayer sp_config){
         return -1;
     }
     
-    struct termios oldtio;
-    struct termios newtio;
-
-
-
+        
     if (tcgetattr(fd, &oldtio) == -1)
     {
         perror("tcgetattr");
@@ -222,6 +218,11 @@ int llwrite(unsigned char *buf, int bufSize){
     alarmCount=0;
     alarmEnabled=FALSE;
     int frameSize = 6 + bufSize;
+    struct timespec start, end;
+    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
+            perror("clock_gettime");
+            return 1;
+            }
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
@@ -312,8 +313,16 @@ int llwrite(unsigned char *buf, int bufSize){
     }
     free(frame);
     if(accept==1){
-        endTotalTime = time(NULL);
-        total_time += ((double) (endTotalTime - startTotalTime));
+            if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
+            perror("clock_gettime");
+            return 1;
+            }
+            long seconds = end.tv_sec - start.tv_sec;
+            printf("Time taken only in seconds: %lli seconds\n", seconds);
+            long nanoseconds = end.tv_nsec - start.tv_nsec;
+            double elapsed_time = seconds + nanoseconds / 1e9;
+        //endTotalTime = time(NULL);
+        //total_time += ((double) (endTotalTime - startTotalTime));
         return bufSize;
     }
     else{
@@ -326,9 +335,15 @@ int llread(unsigned char *buf){
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
-    double diff_time;
-    time_t start_bits, end_bits;
-    time(&start_bits);
+    //double diff_time;
+    struct timespec start, end;
+    //time_t start_bits, end_bits;
+    //start_bits= time(NULL);
+    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
+        perror("clock_gettime");
+        return 1;
+    }
+    //time(&start_bits);
     LinkLayerState state = START;
     while (state!= STOP){
         if(read(fd, &byte,1) >0){
@@ -465,11 +480,22 @@ int llread(unsigned char *buf){
     }
    }
 if(acc==1){ 
-            sleep(1);
-            time(&end_bits);
-            diff_time= difftime(end_bits,start_bits);
-            total_time_read+= diff_time;
-            printf("Execution time = %f\n", diff_time);
+            //sleep(1);
+            //end_bits= time(NULL);
+            //time(&end_bits);
+            //diff_time= difftime(end_bits,start_bits);
+            acc=0;
+            if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
+            perror("clock_gettime");
+            return 1;
+            }
+            long seconds = end.tv_sec - start.tv_sec;
+            printf("Time taken only in seconds: %lli seconds\n", seconds);
+            long nanoseconds = end.tv_nsec - start.tv_nsec;
+            double elapsed_time = seconds + nanoseconds / 1e9;
+            total_time_read+=elapsed_time;
+            //printf("Execution time = %f\n", diff_time);
+            printf("Time taken: %lf seconds\n", elapsed_time);
             printf("Total time read: %f\n", total_time_read);
             return data_byte_counter;}
 return -1;
@@ -767,7 +793,7 @@ unsigned char simulateBitError(unsigned char byte, double errorRate) {
     
      
     double randomError = (double)rand() / RAND_MAX;
-
+    printf(" Randomize Value : %f ", randomError);
     if (randomError < errorRate) {
         
         int bitToFlip = rand() % 8;  

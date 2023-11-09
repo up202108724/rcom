@@ -345,7 +345,6 @@ int llwrite(unsigned char *buf, int bufSize){
 }
 int llread(unsigned char *buf){
     printf("Reached llread! \n");
-    int acc= 0;
     unsigned char byte;
     char control_field;
     int data_byte_counter=0;
@@ -444,18 +443,32 @@ int llread(unsigned char *buf){
                     }
                     if(bcc2==accumulator && frame_error_generator(probability)){
                         printf("Sending RR\n");
-                        acc=1;
                         state=STOP;
                         sendSupervisionFrame(A_FSENDER, C_RR(info_frame_number_receiver));
                         
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         alarm(0);
+                       
+                        if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
+                            perror("clock_gettime");
+                            return 1;
+                            }
+                        long seconds = end.tv_sec - start.tv_sec;
+                        printf("Time taken only in seconds: %lli seconds\n", seconds);
+                        long nanoseconds = end.tv_nsec - start.tv_nsec;
+                        double elapsed_time = seconds + nanoseconds / 1e9;
+                        total_time_read+=elapsed_time;
+                        //printf("Execution time = %f\n", diff_time);
+                        printf("Time taken: %lf seconds\n", elapsed_time);
+                        printf("Total time read: %f\n", total_time_read);
+                        return data_byte_counter;
                     }
                     
                     else{
                         printf("Sending REJ\n");
                         //printf("data_byte_counter: %d\n", data_byte_counter);
                         sendSupervisionFrame(A_FSENDER, C_REJ(info_frame_number_receiver));
+                        return -1;
                     }
 
                 }
@@ -493,25 +506,6 @@ int llread(unsigned char *buf){
         }
     }
    }
-if(acc==1){ 
-            //sleep(1);
-            //end_bits= time(NULL);
-            //time(&end_bits);
-            //diff_time= difftime(end_bits,start_bits);
-            acc=0;
-            if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
-            perror("clock_gettime");
-            return 1;
-            }
-            long seconds = end.tv_sec - start.tv_sec;
-            printf("Time taken only in seconds: %lli seconds\n", seconds);
-            long nanoseconds = end.tv_nsec - start.tv_nsec;
-            double elapsed_time = seconds + nanoseconds / 1e9;
-            total_time_read+=elapsed_time;
-            //printf("Execution time = %f\n", diff_time);
-            printf("Time taken: %lf seconds\n", elapsed_time);
-            printf("Total time read: %f\n", total_time_read);
-            return data_byte_counter;}
 return -1;
 }
 
@@ -816,3 +810,7 @@ unsigned char simulateBitError(unsigned char byte, double errorRate) {
     }
     return byte;
 }
+
+
+
+

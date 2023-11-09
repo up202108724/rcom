@@ -90,6 +90,8 @@ unsigned char readresponseByte(bool waitingforUA);
 
 void ShowStatistics();
 
+int frame_error_generator(unsigned probability);
+
 unsigned char simulateBitError(unsigned char byte, double errorRate);
 
 #endif

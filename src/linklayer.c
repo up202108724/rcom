@@ -18,6 +18,17 @@ double total_time_read=0;
 int bytes_sent=0;
 bool waitingforUA=false;
 bool lastbyte=false;
+int probability=90;
+//int *retransmissions_counter;
+
+int frame_error_generator(unsigned probability)
+{
+    struct timespec t;
+    clock_gettime(0, &t);
+    srand((unsigned)t.tv_nsec);
+    return rand() % 100 <= probability;
+}
+
 void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
@@ -84,6 +95,7 @@ int llopen(LinkLayer sp_config) {
     attempts = sp_config.numTransmissions;
     timeout_ = sp_config.timeout;
     role= sp_config.role;
+    //retransmissons_counter= (int*) malloc(attempts); 
     unsigned char byte;
     if (sp_config.role == Transmissor) {
         while ((alarmCount < attempts) && state != STOP) {
@@ -430,7 +442,7 @@ int llread(unsigned char *buf){
 
                         accumulator=(accumulator ^ buf[i]);
                     }
-                    if(bcc2==accumulator){
+                    if(bcc2==accumulator && frame_error_generator(probability)){
                         printf("Sending RR\n");
                         acc=1;
                         state=STOP;

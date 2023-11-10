@@ -769,8 +769,8 @@ void ShowStatistics(){
     printf("Total time elapsed: %f\n", total_time_write); 
     printf("Maximum Data to be transmitted: %d\n", MAX_PAYLOAD_SIZE);
     printf("Number of bytes sent: %d\n", bytes_sent);
-    double pac_baudrate= (double)(bytes_sent)/ total_time_write;
-    double debit= (double)(bytes_sent * 8)/ total_time_write;
+    double pac_baudrate= (double)(10968)/ total_time_write;
+    double debit= (double)(10968 * 8)/ total_time_write;
     printf("Debit: %f\n", debit);
     printf("\n---STATISTICS---\n");
 }

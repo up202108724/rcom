@@ -14,7 +14,6 @@ struct termios oldtio;
 struct termios newtio;
 Role role;
 double total_time_write=0;
-double total_time_read=0;
 int bytes_sent=0;
 bool waitingforUA=false;
 bool lastbyte=false;
@@ -231,10 +230,6 @@ int llwrite(unsigned char *buf, int bufSize){
     alarmEnabled=FALSE;
     int frameSize = 6 + bufSize;
     struct timespec start, end;
-    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
-            perror("clock_gettime");
-            return 1;
-            }
     unsigned char *frame = (unsigned char *)malloc(frameSize);
     frame[0] = FLAG;
     frame[1] = A_FSENDER;
@@ -280,8 +275,10 @@ int llwrite(unsigned char *buf, int bufSize){
     frame[j++] = FLAG;
     int reject = 0;
     int accept = 0;
-    time_t startTotalTime, endTotalTime;
-    time(&startTotalTime);
+    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
+            perror("clock_gettime");
+            return 1;
+            }
     while (alarmCount< attempts)
     {
         if(alarmEnabled==FALSE){
@@ -352,10 +349,6 @@ int llread(unsigned char *buf){
     struct timespec start, end;
     //time_t start_bits, end_bits;
     //start_bits= time(NULL);
-    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
-        perror("clock_gettime");
-        return 1;
-    }
     //time(&start_bits);
     LinkLayerState state = START;
     while (state!= STOP){
@@ -449,18 +442,6 @@ int llread(unsigned char *buf){
                         info_frame_number_receiver=(info_frame_number_receiver+1)%2;
                         alarm(0);
                        
-                        if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
-                            perror("clock_gettime");
-                            return 1;
-                            }
-                        long seconds = end.tv_sec - start.tv_sec;
-                        printf("Time taken only in seconds: %lli seconds\n", seconds);
-                        long nanoseconds = end.tv_nsec - start.tv_nsec;
-                        double elapsed_time = seconds + nanoseconds / 1e9;
-                        total_time_read+=elapsed_time;
-                        //printf("Execution time = %f\n", diff_time);
-                        printf("Time taken: %lf seconds\n", elapsed_time);
-                        printf("Total time read: %f\n", total_time_read);
                         return data_byte_counter;
                     }
                     
@@ -785,14 +766,10 @@ unsigned char readresponseByte(bool waitingforUA){
 void ShowStatistics(){
     printf("\n---STATISTICS---\n");
     printf("Role: %s\n", role==Transmissor ? "Transmitter" : "Receiver");
-    if(role==Transmissor){
-        printf("Total time elapsed: %f\n", total_time_write); 
-    }
-    else{
-        printf("Total time elapsed: %f\n", total_time_read); 
-    }
+    printf("Total time elapsed: %f\n", total_time_write); 
     printf("Maximum Data to be transmitted: %d\n", MAX_PAYLOAD_SIZE);
     printf("Number of bytes sent: %d\n", bytes_sent);
+    double pac_baudrate= (double)(bytes_sent)/ total_time_write;
     double debit= (double)(bytes_sent * 8)/ total_time_write;
     printf("Debit: %f\n", debit);
     printf("\n---STATISTICS---\n");
